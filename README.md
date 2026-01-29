@@ -1,0 +1,30 @@
+# README
+Ward, A.
+
+## Project Summary
+
+#### Title: Sacramento–San Joaquin Delta Environmental and Fish Community Analysis
+
+This final project within the BIOE 276 Data Science for EEB course
+attempts to analyzes long term changes in temperature and salinity
+within the Sacramento–San Joaquin Delta and assesses how those
+environmental changes have contributed to overall changes in fish
+community assemblages. Using data from the Delta Juvenile Fish
+Monitoring Program Environmental Data Initiative (EDI), we explore these
+specific environemental trends over time and associations with fish
+species composition.
+
+#### Directory Structure
+
+/dds4eeb_FinalProject_DeltaFishes/ ├── data/ \# Raw and processed data
+├── scripts/ \# R scripts and markdown files ├── figures/ \# Output
+plots and figures ├── outputs/ \# Results, tables, and exports ├── docs/
+\# Documentation, notes, and resources ├──README.qmd/ \#Project and
+workflow description file └── BIOE 176
+dds4eeb_FinalProject_DeltaFishes.Rproj \# RStudio project file
+
+#### Data Sources
+
+#### Installation/ Setup
+
+#### Workflow

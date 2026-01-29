@@ -71,8 +71,17 @@ via scripts in the `scripts/` directory.
 
 #### Installation/ Setup
 
-Add information here about data access, packages needed, cloning the
-repo, etc.
+Run `data/edi.244.14.r` to retrieve raw data from EDI repository.
+
+In `.gitignore` run `data/processed/*.csv` and commit this change as
+ignoring our processed data files. These files are too large and must
+only be stored locally.
+
+Then run `scripts/creatingdataframes.R` to regenerate these dataframes
+locally in R.
+
+Add more information here about data access, packages needed, cloning
+the repo, etc.
 
 #### Workflow
 

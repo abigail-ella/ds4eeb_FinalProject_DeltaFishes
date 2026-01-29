@@ -12,3 +12,5 @@ for (nm in names(dfs)) {
             file = paste0("data/processed/", nm, ".csv"),
             row.names = FALSE)
 }
+
+#This data is all too large to save on git so it should be ignored and only saved locally -- I think?

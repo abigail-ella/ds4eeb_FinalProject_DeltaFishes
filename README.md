@@ -29,6 +29,12 @@ over time. Our objectives are:
   environmental condition changes to understand potential ecological
   responses
 
+#### Background Information
+
+ADD MORE HERE about the background information of both DJFMP and how
+this data is influencing our motivating question. Also discuss a target
+audience in bold
+
 ## Repository Summary
 
 #### Directory Structure
@@ -80,14 +86,13 @@ only be stored locally.
 Then run `scripts/creatingdataframes.R` to regenerate these dataframes
 locally in R.
 
-Add more information here about data access, packages needed, cloning
-the repo, etc.
+ADD MORE HERE about data access, packages needed, cloning the repo, etc.
 
 #### Workflow
 
-Add information here about what each script we have does, content
-available for data import and cleaning, looking at maps of environmental
-trends, and then fish community analysis.
+ADD MORE HERE about what each script we have does, content available for
+data import and cleaning, looking at maps of environmental trends, and
+then fish community analysis.
 
 #### References
 

@@ -10,14 +10,54 @@ output-file: README.md
 
 #### Title: Sacramento–San Joaquin Delta Environmental and Fish Community Analysis
 
-This final project within the BIOE 276 Data Science for EEB course attempts to analyzes long term changes in temperature and salinity within the Sacramento–San Joaquin Delta and assesses how those environmental changes have contributed to overall changes in fish community assemblages. Using data from the Delta Juvenile Fish Monitoring Program Environmental Data Initiative (EDI), we explore these specific environemental trends over time and associations with fish species composition.
+This final project within the BIOE 276 Data Science for EEB course attempts to analyzes long term changes in temperature and salinity within the Sacramento–San Joaquin Delta and assesses how those environmental changes have contributed to overall changes in fish community assemblages. Using data from the Delta Juvenile Fish Monitoring Program Environmental Data Initiative (EDI), we explore these specific environmental trends over time and associations with fish species composition.
+
+#### Research Questions/ Objectives
+
+Our project is looking to understand the long term changes to important environmental variables within the Sacramento–San Joaquin Delta. We want to understand the impacts of these shifts on fish community assemblages over time. Our objectives are:
+
+-   Analyze shifts in temperature and salinity over time
+
+-   Assess changes in species composition, abundance, and distribution
+
+-   Look at correlations between patterns of fish communities and environmental condition changes to understand potential ecological responses
+
+## Repository Summary
 
 #### Directory Structure
 
-/dds4eeb_FinalProject_DeltaFishes/ ├── data/ \# Raw and processed data ├── scripts/ \# R scripts and markdown files ├── figures/ \# Output plots and figures ├── outputs/ \# Results, tables, and exports ├── docs/ \# Documentation, notes, and resources ├──README.qmd/ #Project and workflow description file └── BIOE 176 dds4eeb_FinalProject_DeltaFishes.Rproj \# RStudio project file
+`/dds4eeb_FinalProject_DeltaFishes/`
+
+`├── data/ # Raw and processed data`
+
+`├── scripts/ # R scripts and markdown files`
+
+`├── figures/ # Output plots and figures`
+
+`├── outputs/ # Results, tables, and exports`
+
+`├── docs/ # Documentation, notes, and resources`
+
+`├──README.qmd/ #Project and workflow description file`
+
+`└── BIOE 176 dds4eeb_FinalProject_DeltaFishes.Rproj # RStudio project file`
 
 #### Data Sources
 
+All data used in this project is from the Delta Juvenile Fish Monitoring Program (DJFMP) Environmental Data, accessed via the Environmental Data Initiative (EDI - <https://portal.edirepository.org/nis/mapbrowse?scope=edi&identifier=244>). Sampling locations are spread throughout the Sacramento–San Joaquin River Delta and span decades as monitoring has occurred from 1976 to present day. This program has monitored abundance and distribution of fish species utilizing both trawls and beach seines. Monitoring also include environmental data at all sites.
+
+Data used in this analysis was filtered to focus specifically on trawl survey data during the fall season. Here, we focus on two key water quality parameters measured within this data: temperature and salinity.
+
+Raw data were downloaded as CSV files and stored in the `data/` directory. Processed data used for analysis are generated via scripts in the `scripts/` directory.
+
 #### Installation/ Setup
 
+Add information here about data access, packages needed, cloning the repo, etc.
+
 #### Workflow
+
+Add information here about what each script we have does, content available for data import and cleaning, looking at maps of environmental trends, and then fish community analysis.
+
+#### References
+
+United States Fish and Wildlife Service, J. Speegle, C. Macfarlane, E. Huber, D. Goodman, K. Erly, and R. Cook. 2026. Interagency Ecological Program: Over four decades of juvenile fish monitoring data from the San Francisco Estuary, collected by the Delta Juvenile Fish Monitoring Program, 1976-2025 ver 14. Environmental Data Initiative. https://doi.org/10.6073/pasta/ad35c80cafd87ba928d3f37fa124ccaf (Accessed 2026-01-28).

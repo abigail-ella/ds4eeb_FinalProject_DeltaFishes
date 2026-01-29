@@ -1,5 +1,5 @@
 ---
-title: "README"
+title: "README.qmd"
 author: "Ward, A."
 format: gfm
 editor: visual

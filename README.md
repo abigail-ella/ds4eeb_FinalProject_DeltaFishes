@@ -103,3 +103,5 @@ Francisco Estuary, collected by the Delta Juvenile Fish Monitoring
 Program, 1976-2025 ver 14. Environmental Data Initiative.
 https://doi.org/10.6073/pasta/ad35c80cafd87ba928d3f37fa124ccaf (Accessed
 2026-01-28).
+
+<https://r.geocompx.org/adv-map>

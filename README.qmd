@@ -79,7 +79,7 @@ ADD MORE HERE about data access, packages needed, cloning the repo, etc.
 
 Initially, we expect to process our data, asking questions, and generating figures. Most of this will be done individually, albeit with mutual support for technical questions and some discussion regarding what we are seeing. There should be a good deal of data wrangling and cleaning at this stage, eliminating, too, what seems extraneous. Initial ideas about data analysis should begin to emerge. This is likely to be coupled with reading from the published literature, although the amount of time available probably is going to limit this.
 
-Our research questions are expected to "lead to a specific statistical analysis plan" (Popovic et al. 2024) for each.
+Our research questions are expected to "lead to a specific statistical analysis plan" (Popovic et al. 2024) for each. Consider adopting a risk-of-bias assessment tool (see Boyd et al. 2022) and registering (*sensu* Popovic et al. 2024) a description of our study with Malin (sort of an informal registration).
 
 ##### Refine
 
@@ -95,7 +95,16 @@ ALSO: let's add a timeline in here, so we know *what* things are due and *when*!
 
 #### References
 
+Boyd, R. J., Powney, G. D., Burns, F., Danet, A., Duchenne, F., Grainger, M. J., Jarvis, S. G., Martin, G., Nilsen, E. B., Porcher, E., Stewart, G. B., Wilson, O. J., & Pescott, O. L. (2022). ROBITT: A tool for assessing\
+the risk-of-bias in studies of temporal trends in ecology. Methods in Ecology and Evolution, 13(7), 1497–1507. https:// doi.org/10.1111/2041- 210X.13857
+
+Popovic, Gordana, Tanya Jane Mason, Szymon Marian Drobniak, et al. “Four Principles for Improved Statistical Ecology.” *Methods in Ecology and Evolution* 15 (2024): 266–81. <https://doi.org/10.1111/2041-210X.14270>.
+
 United States Fish and Wildlife Service, J. Speegle, C. Macfarlane, E. Huber, D. Goodman, K. Erly, and R. Cook. 2026. Interagency Ecological Program: Over four decades of juvenile fish monitoring data from the San Francisco Estuary, collected by the Delta Juvenile Fish Monitoring Program, 1976-2025 ver 14. Environmental Data Initiative. https://doi.org/10.6073/pasta/ad35c80cafd87ba928d3f37fa124ccaf (Accessed 2026-01-28).
+
+Wang, Yi, Ulrike Naumann, Stephen T. Wright, and David I. Warton. “mvabund– an R Package for Model-Based Analysis of Multivariate Abundance Data.” *Methods in Ecology and Evolution* 3, no. 3 (2012): 471–74. <https://doi.org/10.1111/j.2041-210X.2012.00190.x>.
+
+Warton, David I., Mitchell Lyons, Jakub Stoklosa, and Anthony R. Ives. “Three Points to Consider When Choosing a LM or GLM Test for Count Data.” *Methods in Ecology and Evolution* 7, no. 8 (2016): 882–90. <https://doi.org/10.1111/2041-210X.12552>.
 
 <https://iep.ca.gov/Science-Synthesis-Service/Monitoring-Programs/Delta-Juvenile-Fish>
 

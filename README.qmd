@@ -22,8 +22,8 @@ Our project is looking to understand the long term changes to important environm
 -   Compare the seasonal composition of fish communities in discrete parts of the Delta
 -   Quantify the environmental predictability associated with water temperature, salinity, turbidity and flow from discrete parts of the Delta
 -   Map year-to-year changes in environmental conditions across the Delta
--   Track phenology of salmonid outmigration over time and during different water year types (for example, how does juvenile salmon transit time between Delta entry at Sacramento and Mossdale and Delta exit at Chipps Island vary from one year to the next?)
--   Is Silverside (*Menidia audens*) abundance correlated with environmental predictability?
+-   Track phenology of salmonid outmigration over time and during different water year types (for example, how does juvenile salmon transit time between Delta entry at Sacramento and Mossdale and Delta exit at Chipps Island vary from one year to the next?) *Prediction: Delta passage times will be slowest during water years characterized by intermediate flow (or precipitation) rates and faster under conditions of high flow (early departure from natal streams and travel facilitated by current speed) and under conditions of low flow (some juveniles delay outmigration due to slower growth rates coupled with reduced travel rates associated with slower current speeds).* This is going to be complicated by multiple run-types having differing run timing.
+-   Is Silverside (*Menidia audens*) abundance correlated with environmental predictability? Is a short-lived fish subject to a variable that is defined over decades? What about a long-lived species?
 
 #### Background Information
 
@@ -78,6 +78,8 @@ ADD MORE HERE about data access, packages needed, cloning the repo, etc.
 ##### Explore
 
 Initially, we expect to process our data, asking questions, and generating figures. Most of this will be done individually, albeit with mutual support for technical questions and some discussion regarding what we are seeing. There should be a good deal of data wrangling and cleaning at this stage, eliminating, too, what seems extraneous. Initial ideas about data analysis should begin to emerge. This is likely to be coupled with reading from the published literature, although the amount of time available probably is going to limit this.
+
+Our research questions are expected to "lead to a specific statistical analysis plan" (Popovic et al. 2024) for each.
 
 ##### Refine
 

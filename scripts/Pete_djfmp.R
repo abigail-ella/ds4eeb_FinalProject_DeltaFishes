@@ -852,7 +852,7 @@ summary(as.factor(dt5$StationCode))
 detach(dt5)               
 
 # added
-rm(list = tail(ls(), n = 14)) # removes all objects except the data fields
+rm(list = tail(ls(), n = 14)) # removes all objects except the data objects
 
 # save raw data
 saveRDS(dt1, "Pete_local_data/dt1.rds")

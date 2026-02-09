@@ -1,0 +1,219 @@
+---
+title: "Ward_DJFMP_explore"
+author: "Ward, A."
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls()) #clean environment
+
+library(here)
+knitr::opts_knit$set(
+  root.dir = here::here()
+)
+
+knitr::opts_chunk$set(echo = FALSE,
+                      eval = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+```{r packages, include=FALSE}
+library(readr)
+library(tidyverse)
+library(readxl) 
+library(dplyr)
+library(janitor) 
+library (stringr)
+library(openxlsx)
+library(stats)
+library(car)
+library(ggplot2)
+library(ggpubr)
+```
+
+#Import Data
+```{r loading in data}
+#loading in data
+sample_sites <- read_csv("./data/processed/sample_sites.csv")
+taxonomy <- read_csv("./data/processed/taxonomy.csv")
+trawl_02_25 <- read_csv("./data/processed/trawl_02_25.csv")
+trawl_76_01 <- read_csv("./data/processed/trawl_76_01.csv")
+```
+
+#Data Cleaning and Tidying
+```{r}
+#Separate sample date into day, month year
+trawl_76_01 <- trawl_76_01 %>% 
+  separate(SampleDate, into = c('day', 'month', 'year'), sep = "/", remove = FALSE)
+
+trawl_02_25 <- trawl_02_25 %>% 
+  separate(SampleDate, into = c('day', 'month', 'year'), sep = "/", remove = FALSE)
+
+trawl_76_01 <- trawl_76_01 %>%
+  mutate(
+    month = factor(
+      month,
+      levels = 1:12,
+      labels = month.abb,
+      ordered = TRUE
+    )
+  )
+
+trawl_02_25 <- trawl_02_25 %>%
+  mutate(
+    month = factor(
+      month,
+      levels = 1:12,
+      labels = month.abb,
+      ordered = TRUE
+    )
+  )
+
+
+
+```
+
+#Looking at avg water temp by year and location
+```{r}
+avg_temp_table1 <- trawl_76_01 %>%
+  group_by(year, Location) %>%
+  summarise(
+    avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+avg_temp_table1
+
+
+ggplot(avg_temp_table1, aes(x = as.numeric(year), y = avg_WaterTemp, color = Location)) +
+  geom_point(size = 3) +
+  geom_line(linewidth = 1) +
+   geom_smooth(
+      aes(group = 1),
+      method = "lm",
+      se = TRUE,
+      color = "black",
+      linewidth = 1.2,
+      linetype = "dashed"
+    ) +
+  labs(
+    title = "Average Water Temperature Over Time by Location",
+    x = "Year",
+    y = "Average Water Temperature"
+  ) +
+  theme_minimal()
+
+avg_temp_table2 <- trawl_02_25 %>%
+  group_by(year, Location) %>%
+  summarise(
+    avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+avg_temp_table2
+
+ggplot(avg_temp_table2, aes(x = as.numeric(year), y = avg_WaterTemp, color = Location)) +
+  geom_point(size = 3) +
+  geom_line(linewidth = 1) +
+   geom_smooth(
+      aes(group = 1),
+      method = "lm",
+      se = TRUE,
+      color = "black",
+      linewidth = 1.2,
+      linetype = "dashed"
+    ) +
+  labs(
+    title = "Average Water Temperature Over Time by Location",
+    x = "Year",
+    y = "Average Water Temperature"
+  ) +
+  theme_minimal()
+
+
+```
+#Looking at seasonal water temp differences
+```{r}
+ggplot(trawl_76_01, aes(x = month, y = WaterTemp)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.7) +
+  labs(
+    x = "Month",
+    y = "Water Temperature"
+  ) +
+  theme_minimal()
+
+ggplot(trawl_02_25, aes(x = month, y = WaterTemp)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.7) +
+  labs(
+    x = "Month",
+    y = "Water Temperature"
+  ) +
+  theme_minimal()
+
+seasonal_means <- trawl_76_01 %>%
+  group_by(month) %>%
+  summarise(
+    avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(seasonal_means, aes(x = month, y = avg_WaterTemp, group = 1)) +
+  geom_point(size = 3) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Average Seasonal Cycle of Water Temperature",
+    x = "Month",
+    y = "Average Water Temperature"
+  ) +
+  theme_minimal()
+
+
+trawl_76_01 <- trawl_76_01 %>%
+  mutate(
+    season = case_when(
+      month %in% c("Dec", "Jan", "Feb") ~ "Winter",
+      month %in% c("Mar", "Apr", "May") ~ "Spring",
+      month %in% c("Jun", "Jul", "Aug") ~ "Summer",
+      month %in% c("Sep", "Oct", "Nov") ~ "Fall"
+    )
+  )
+
+ggplot(trawl_76_01, aes(x = season, y = WaterTemp)) +
+  facet_wrap(~year) +
+  geom_boxplot(fill = "tan", alpha = 0.7)
+
+```
+Okay water temp looks so insanely stable?
+
+Are seasonal water temps sig different?
+```{r}
+seasonal_avg_76_01 <- trawl_76_01 %>%
+  group_by(year, season) %>%
+  summarise(
+    avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+anova_season1 <- aov(avg_WaterTemp ~ season, data = seasonal_avg_76_01)
+summary(anova_season1)
+```
+
+Basic Map of Sample Sites
+```{r}
+library(sf)
+library(terra)
+library(dplyr)
+library(spData)
+install.packages("spDataLarge", repos = "https://nowosad.github.io/drat/", type = "source")
+
+library(spDataLarge)
+install.packages("tmap", repos = c("https://r-tmap.r-universe.dev",
+                                   "https://cloud.r-project.org"))
+library(tmap)    # for static and interactive maps
+library(leaflet) # for interactive maps
+library(ggplot2) # tidyverse data visualization package
+
+```
+

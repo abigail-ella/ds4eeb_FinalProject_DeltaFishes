@@ -32,12 +32,16 @@ str(dt3) # SampleDate, SampleTime as chr;
 # Volume
 # consider filtering by taxa:
 # select fishes only
+dt3 %>% 
+  filter(IEPFishCode %in% levels(fish_codes[2,]))
 
 (temp4 <- head(dt4)) # taxonomic details; use to filter dt1 & dt2 for fishes
-(fishes <- 
+dt4 %>% filter(Class == "Osteichthyes") # Sebastes auriculatus, Embiotoca lateralis, Oligocottus maculosus ARE Actinopterygii!
+dt4 %>% filter(Phylum == "Chordata") %>% select(CommonName, NonNative, Family, Genus, Species)
+(fish_codes <- 
     dt4 %>% 
-    filter(Class == "Actinopterygii",
-           IEPFishCode != "<NA>") %>% 
+    filter(Phylum == "Chordata",
+           Species != "<NA>") %>%  # fishes identified to species only
     distinct(IEPFishCode))
 
 (temp5 <- head(dt5)) # lat lon data for Location & StationCode
@@ -48,4 +52,35 @@ str(dt3) # SampleDate, SampleTime as chr;
 
 # SCRATCH -----
 
-temp
+dt3[7000:7070,] %>% select(Location, SampleDate, IEPFishCode, CommonName)
+
+dt3 %>% filter(Phylum != "Chordata") %>% select(Location, SampleDate, IEPFishCode, CommonName) %>% view()
+dt3 %>% distinct(CommonName)
+
+invert_common_name <- c("Siberian prawn", "Estuarine jellyfish", "Black Sea jellyfish", "comb jelly", "red-eye medusa", "giant bell jelly", "Cnidarian unknown","Moerisia sp.", "Pacific sea nettle", "Egg yolk jellyfish", "Heptacarpus sp.", "Crangon sp.", "moon jellyfish", "Mud shrimp")
+
+dt3 %>% 
+  filter(CommonName %in% invert_common_name) # finds all rows w listed invertebrates NOT EXHAUSTIVE!
+invert_sample <-
+  dt3 %>% 
+  filter(CommonName %in% invert_common_name) %>% 
+  slice_sample(n = 100)
+
+# create a subsample of the beach seine data (dt3) with lots of inverts to test
+dt3_sample <-
+  full_join(invert_sample, 
+            slice_sample(dt3, n = 100)) %>% 
+  slice_sample(prop = 1) %>% # randomizes the order of the rows
+  print() # at least 50% of these should be invertebrates (could be slightly >50%)
+
+dt3_sample %>% 
+  filter(IEPFishCode %in% fishes)
+test <- c("LARBAS", "MISSIL", "RAIKIL")
+dt3_sample %>% filter(IEPFishCode %in% test)
+typeof(test)
+typeof(fishes)
+dt3_sample_fishes <-
+  dt3_sample %>% 
+  filter(IEPFishCode %in% levels(fishes[2,])) %>% 
+  print()
+dim(dt3_sample_fishes)

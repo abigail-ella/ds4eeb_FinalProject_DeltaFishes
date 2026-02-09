@@ -34,6 +34,11 @@ str(dt3) # SampleDate, SampleTime as chr;
 # select fishes only
 
 (temp4 <- head(dt4)) # taxonomic details; use to filter dt1 & dt2 for fishes
+(fishes <- 
+    dt4 %>% 
+    filter(Class == "Actinopterygii",
+           IEPFishCode != "<NA>") %>% 
+    distinct(IEPFishCode))
 
 (temp5 <- head(dt5)) # lat lon data for Location & StationCode
 

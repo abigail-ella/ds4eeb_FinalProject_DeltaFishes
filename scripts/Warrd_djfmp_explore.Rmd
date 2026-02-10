@@ -181,7 +181,7 @@ trawl_76_01 <- trawl_76_01 %>%
   )
 
 ggplot(trawl_76_01, aes(x = season, y = WaterTemp)) +
-  facet_wrap(~year) +
+  #facet_wrap(~year) +
   geom_boxplot(fill = "tan", alpha = 0.7)
 
 ```

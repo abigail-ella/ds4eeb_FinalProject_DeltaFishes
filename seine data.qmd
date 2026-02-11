@@ -1426,7 +1426,7 @@ seine <-
   seine_all_var %>% 
   select(c(location:date, water_temp, turbidity_fnu:specific_conductance, iep_fish_code:common_name, fork_length, race_by_length, race_by_tag, count))
 
-write_rds(seine, "data/seine.rds")
+write_rds(seine, "Pete_local_data/seine.rds")
 
 # wide format
 seine_w <-
@@ -1439,7 +1439,7 @@ seine_w %>%
   specific_conductance, iep_fish_code)) %>% 
   filter(n > 1L)
 
-write_rds(seine_w, "data/seine_w.rds")
+write_rds(seine_w, "Pete_local_data/seine_w.rds")
 ```
 
 ## Field Methods

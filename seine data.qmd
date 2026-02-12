@@ -1431,7 +1431,9 @@ write_rds(seine, "Pete_local_data/seine.rds")
 # wide format
 seine_w <-
   seine %>% 
-  pivot_wider(id_cols = location:iep_fish_code, names_from = common_name, values_from = count)
+  pivot_wider(id_cols = location:iep_fish_code, 
+              names_from = common_name, 
+              values_from = count)
 
 # check: no duplicates
 seine_w %>% 
@@ -1448,10 +1450,37 @@ The EDI site provides the following information about how the beach seines were 
 
 BEACH SEINE: We use beach seines to evaluate the spatial distribution of fishes occurring in unobstructed shallow near-shore habitats (e.g., beaches and boat ramps ≤ 1.2 m in depth) throughout the lower Sacramento and San Joaquin Rivers, the Sacramento-San Joaquin Delta, and the lower San Francisco Estuary. Beach seine sites are stratified into six geographic seine regions: (1) Lower Sacramento River, (2) North Delta, (3) Central Delta, (4) South Delta, (5) Lower San Joaquin River, and (6) San Francisco and San Pablo Bays. Seine regions are delineated by proximity to canals or water bypasses where fish may be diverted from historical migration routes. In this dynamic system, occasional changes in river flow or environmental conditions prevent sampling or make it necessary to temporarily relocate seine sites (e.g., tidal conditions, or submerged or floating aquatic vegetation blocking access to sites). If new seine sites were needed, we attempted to relocate the site to another location with similar habitat (e.g., hydrogeomorphic characteristics) that was less than 100 m from the original site. Access to beach seine sites in the Lower San Joaquin River seine region can be difficult under certain conditions. Since 2000, when the discharge of the lower San Joaquin River dropped below 51 m3/s and boat access to the regular beach seine locations became difficult, replacement sites that were accessible from land were sampled instead (station codes: SJ065W, SJ070W, SJ074A, SJ076W, SJ079E). Under normal conditions (staff available, no obstructions at site, etc.), we conduct beach seine sampling once a week at each site for all seine regions except the Lower San Joaquin River and the San Francisco and San Pablo Bays regions. Beach seine sites within the Lower San Joaquin River Region were generally sampled once a week from January 1 to July 31 and once every two weeks from August 1 to December 31. The beach seine sites located within the San Francisco and San Pablo Bays Region were generally sampled once every two weeks due to the low occurrence of fish species of management concern at this area.
 
+## Initial Patterns
+
+```{r}
+library(vegan)
+specnumber(seine_w[c(9:128)])
+specnumber(unlist(seine_w[,c(9:128)])) # Number of species per site
+
+diversity(seine_w, index = "shannon") # Shannon index
+diversity(seine_w, index = "simpson") # Simpson index
+H <- diversity(seine_w, "shannon")
+S <- specnumber(seine_w)
+(J <- H / log(S))
+```
+
 ## SCRATCH
 
 ```{r}
-temp <- seine_all_var %>% select(location, date, iep_fish_code, common_name, fork_length, count) %>% 
-  slice_sample(n = 20) %>% print()
-temp %>% pivot_wider(id_cols = location:iep_fish_code, names_from = common_name, values_from = count)
+
+library(vegan)
+specnumber(seine_w[1:6,c(3:4,8:11)])
+
+temp <-
+  seine_w[1:6,c(3:4,8:11)] %>% 
+  tibble()
+
+temp[c(2,4,5),c(5,6)] <- 0
+temp[6,6] <- 0
+
+as.numeric(unlist(temp$`Minnow unknown`))
+
+df$col1[is.na(df$col1)] <- 0
+
+
 ```

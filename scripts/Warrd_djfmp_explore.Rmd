@@ -46,10 +46,10 @@ trawl_76_01 <- read_csv("./data/processed/trawl_76_01.csv")
 ```{r}
 #Separate sample date into day, month year
 trawl_76_01 <- trawl_76_01 %>% 
-  separate(SampleDate, into = c('day', 'month', 'year'), sep = "/", remove = FALSE)
+  separate(SampleDate, into = c('month', 'day', 'year'), sep = "/", remove = FALSE)
 
 trawl_02_25 <- trawl_02_25 %>% 
-  separate(SampleDate, into = c('day', 'month', 'year'), sep = "/", remove = FALSE)
+  separate(SampleDate, into = c('month', 'day', 'year'), sep = "/", remove = FALSE)
 
 trawl_76_01 <- trawl_76_01 %>%
   mutate(
@@ -71,9 +71,96 @@ trawl_02_25 <- trawl_02_25 %>%
     )
   )
 
+combo_trawl <- bind_rows(trawl_76_01, trawl_02_25)
+combo_trawl$year <- as.numeric(combo_trawl$year)
+
+```
+
+#Unique species over the years
+```{r}
+unique(combo_trawl$CommonName)
+
+#Species
+species_by_year <- combo_trawl %>%
+  filter(!is.na(CommonName)) %>%
+  group_by(year, CommonName) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(year, desc(count))
+
+species_by_year
+
+ggplot(species_by_year, aes(x = year, y = count, color = CommonName)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  theme(
+    legend.position = "none")
 
 
 ```
+#salmonids over years
+```{r}
+salmonids_by_year <- combo_trawl %>%
+  filter(!is.na(CommonName)) %>%
+  filter(CommonName == "steelhead" | CommonName == "Chinook Salmon") %>% 
+  group_by(year, CommonName) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(year, desc(count))
+
+salmonids_by_year
+
+#Chinook by year
+ggplot(salmonids_by_year %>% 
+         filter(CommonName =="Chinook Salmon"), aes(x = year, y = count)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal()
+
+#Steelhead by year
+ggplot(salmonids_by_year %>% 
+         filter(CommonName =="steelhead"), aes(x = year, y = count)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal()
+
+```
+#looking at avg water temp by year
+```{r}
+#Cal avg water etmp by year
+avg_temp_by_year <- combo_trawl %>%
+  group_by(year) %>%
+  summarise(avg_temp = mean(WaterTemp, na.rm = TRUE),
+            .groups = "drop")
+
+#temp/ salmon plot data
+temp_sal_plot_data <- left_join(salmonids_by_year, avg_temp_by_year, by = "year")
+
+#Scale for dual axis plotting
+scale_factor <- max(temp_sal_plot_data$count, na.rm = TRUE) / 
+                max(temp_sal_plot_data$avg_temp, na.rm = TRUE)
+
+temp_sal_plot_data <- temp_sal_plot_data %>%
+  mutate(temp_scaled = avg_temp * scale_factor)
+
+#Dual axis plot
+ggplot(temp_sal_plot_data, aes(x = year)) +
+  geom_line(aes(y = count, color = CommonName), size = 1) +
+  geom_line(aes(y = temp_scaled, color = "Avg Water Temp"), 
+            linetype = "dashed", size = 1) +
+  scale_y_continuous(
+    name = "Salmon Count",
+    sec.axis = sec_axis(~ . / scale_factor,
+                        name = "Average Water Temperature")
+  ) +
+  
+  theme_minimal() 
+
+
+```
+
+
+
+
 
 #Looking at avg water temp by year and location
 ```{r}
@@ -185,7 +272,7 @@ ggplot(trawl_76_01, aes(x = season, y = WaterTemp)) +
   geom_boxplot(fill = "tan", alpha = 0.7)
 
 ```
-Okay water temp looks so insanely stable?
+Ok fixed water temp seasonality 
 
 Are seasonal water temps sig different?
 ```{r}

@@ -3,9 +3,7 @@ title: "walt_djfmp_explore"
 format: html
 ---
 
-## Goal 1:
-
-view changes in species diversity by site throughout time
+## Tidying Data:
 
 ```{r}
 #loading packages
@@ -56,6 +54,8 @@ combo_trawl <- bind_rows(trawl_76_01, trawl_02_25)
 combo_trawl$year <- as.numeric(combo_trawl$year)
 
 ```
+
+### Joining Tables for Taxonomy
 
 ```{r}
 trawl_joined <- combo_trawl %>%
@@ -116,6 +116,27 @@ count_family <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y =
 count_family
 ```
 
+### Stacked Area
+
+```{r warning = FALSE, message = FALSE}
+count_area <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y = Count)) +
+  geom_area(aes(fill= Family)) +
+  facet_wrap(Location ~ ., scales = "free_y") +
+  scale_y_log10()
+
+count_area
+
+```
+
+```{r warning = FALSE, message = FALSE}
+count_area2 <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y = Count)) +
+  geom_area(aes(fill= Family)) +
+  scale_y_log10()
+
+count_area2
+
+```
+
 ## Native vs Invasive
 
 ```{r}
@@ -133,4 +154,14 @@ count_nonnative <- ggplot(data = native_trawl, mapping = aes(x = year, y = Count
   ylim(0,250000)
 
 count_nonnative
+```
+
+```{r warning = FALSE, message = FALSE}
+native_area <- ggplot(data = native_trawl, mapping = aes(x = year, y = Count)) +
+  geom_area(aes(fill= NonNative)) +
+  facet_wrap(Location ~ .) +
+  scale_y_log10()
+
+native_area
+
 ```

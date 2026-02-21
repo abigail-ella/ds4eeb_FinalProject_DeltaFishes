@@ -1,0 +1,63 @@
+---
+title: "script"
+author: "Ambrosio"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+Messing around with the data
+
+```{r}
+head(trawl_02_25)
+```
+
+inspect dt
+```{r}
+
+head(dt1)
+```
+inspect sample date
+```{r}
+print(dt1$SampleDate)
+```
+
+```{r}
+unique(dt1$SampleDate)
+```
+look at column names from each tibble
+```{r}
+colnames(dt1)
+```
+```{r}
+colnames(dt2)
+```
+```{r}
+colnames(dt3)
+```
+```{r}
+colnames(dt4)
+```
+
+```{r}
+colnames(dt5)
+```
+The ones that I want are sampleDate, Location, OrganismCode,IEPFishcode, CommonName, Phylum, Class, Order, Family, Genus, Species, NonNative,Longitude, Latitude
+
+```{r}
+library(tidyr)
+```
+
+```{r}
+#trying to make a new data frame with variables I'm interested in for mapping a time series and looking at community structure.
+new_tibble <- 
+ left_join(dt1,dt2,
+           join_by(OrganismCode == OrganismCode, 
+                   IEPFishCode == IEPFishCode,
+                   CommonName == CommonName,
+                   Location == Location
+                   
+                   
+                   ))
+```
+

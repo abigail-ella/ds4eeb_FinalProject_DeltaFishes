@@ -65,7 +65,7 @@ Raw data were downloaded as CSV files and stored in the `data/` directory. Pro
 
 #### Installation/ Setup
 
-Run `data/edi.244.14.r` to retrieve raw data from EDI repository.
+Run `data/raw/edi.244.14.r` to retrieve raw data from EDI repository.
 
 In `.gitignore` run `data/processed/*.csv` and commit this change as ignoring our processed data files. These files are too large and must only be stored locally.
 

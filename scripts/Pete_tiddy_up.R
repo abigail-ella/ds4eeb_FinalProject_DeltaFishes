@@ -1,6 +1,7 @@
 # load libraries -----
 library(tidyverse)
 library(janitor)
+library(chron)
 
 # load and tidy data -----
 dt1 <- readRDS("~/Documents/projects/ds4eeb/ds4eeb/final_proj/Pete_local_data/dt1.rds")
@@ -10,6 +11,7 @@ dt4 <- readRDS("~/Documents/projects/ds4eeb/ds4eeb/final_proj/Pete_local_data/dt
 dt5 <- readRDS("~/Documents/projects/ds4eeb/ds4eeb/final_proj/Pete_local_data/dt5.rds")
 
 # what do we have? -----
+## trawl 78-01 ------
 (temp1 <- head(dt1)) # first half of data
 range(dt1$SampleDate) # trouble with dates! should be 1978-2001, based on head/tail()
 str(temp1) # SampleDate, SampleTime as chr; DO, Turbidity, SpecificConductance as logi?
@@ -20,34 +22,62 @@ str(temp1) # SampleDate, SampleTime as chr; DO, Turbidity, SpecificConductance a
 # consider filtering by taxa:
 # select fishes only
 
+## trawl 02-24 ------
 (temp2 <- head(dt2)) # second half of data
 range(dt2$SampleDate) # more date formatting issues; note that data are NOT arranged by date
 
-(temp3 <- head(dt3)) # beach seine data only
-levels(dt3$MethodCode)
-str(dt3) # SampleDate, SampleTime as chr; 
-# consider filtering by factors:
-# GearConditionCode, WeatherCode, SiteDisturbance, AlternateSite, SpecialStudy
-# consider filtering by value:
-# Volume
-# consider filtering by taxa:
-# select fishes only
-dt3 %>% 
-  filter(IEPFishCode %in% levels(fish_codes[2,]))
-
-(temp4 <- head(dt4)) # taxonomic details; use to filter dt1 & dt2 for fishes
+## taxonic details -----
+(temp4 <- head(dt4)) # taxonomic details; use to filter dt1, dt2 & dt3 for fishes
 dt4 %>% filter(Class == "Osteichthyes") # Sebastes auriculatus, Embiotoca lateralis, Oligocottus maculosus ARE Actinopterygii!
 dt4 %>% filter(Phylum == "Chordata") %>% select(CommonName, NonNative, Family, Genus, Species)
+
+# pull all IEP fish codes out to help with filtering for fish data only (ie no inverts)
 (fish_codes <- 
     dt4 %>% 
     filter(Phylum == "Chordata",
            Species != "<NA>") %>%  # fishes identified to species only
     distinct(IEPFishCode))
 
+## seine data ----
+(temp3 <- head(dt3)) # beach seine data only
+range(dt3$SampleDate) # should start in 1976...
+levels(dt3$MethodCode) # yep, seine only
+str(dt3) # SampleDate, SampleTime as chr; 
+# consider filtering by factors:
+# GearConditionCode, WeatherCode, SiteDisturbance, AlternateSite, SpecialStudy
+# Gear...: 1=good sample, 2=fair, 3=poor, 9=fish gilled in trawl net, not caught properly;
+#          seems to reference condition of the sample (fish), not the gear--unimportant?
+# consider filtering by value:
+# Volume (there are some extreme values)
+# consider filtering by taxa: (fishes only)
+# consider filtering by region_code:
+# 1= Lower Sacramento River, 2= North Delta, 3= Central Delta, 4= South Delta, 5= San Joaquin River, 6= Bay Area, 7= Sacramento River
+
+
+seine_all_var <-
+  dt3 %>% 
+  # select fishes only (includes empty hauls--seines w no fishes of any spp)
+  filter(IEPFishCode %in% levels(fish_codes[2,])) %>% 
+  # provide columns w good names
+  clean_names() %>% 
+  # fix date & time variables, originally as chr
+  mutate(date = mdy(sample_date), 
+         time = times(sample_time), 
+         .keep = "unused") %>% 
+  # reorder columns
+  relocate(date:time, .before = method_code)
+
+## location data ----
 (temp5 <- head(dt5)) # lat lon data for Location & StationCode
 
 # select variables, levels, ranges, etc -----
+summary(seine_all_var)
 
+# filter by:
+# circum that may compromise data qual? (time, gear_condition, weather_code, 
+# site_disturbance, alternate_site, [seine] volume, special_study)
+
+# do, turbidity, specific_conductance (outliers?)
 
 
 # SCRATCH -----

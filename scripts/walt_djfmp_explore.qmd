@@ -1,0 +1,167 @@
+---
+title: "walt_djfmp_explore"
+format: html
+---
+
+## Tidying Data:
+
+```{r}
+#loading packages
+library(ggplot2)
+library(here)
+library(tidyverse)
+library(dplyr)
+
+```
+
+```{r}
+#reading data
+sample_sites <- read.csv(here("data","processed","sample_sites.csv"))
+taxonomy <- read.csv(here("data","processed","taxonomy.csv"))
+trawl_02_25 <- read.csv(here("data","processed","trawl_02_25.csv"))
+trawl_76_01 <- read.csv(here("data","processed","trawl_76_01.csv"))
+```
+
+```{r}
+#Separate sample date into day, month year (thanks abby for the code)
+trawl_76_01 <- trawl_76_01 %>% 
+  separate(SampleDate, into = c('month', 'day', 'year'), sep = "/", remove = FALSE)
+
+trawl_02_25 <- trawl_02_25 %>% 
+  separate(SampleDate, into = c('month', 'day', 'year'), sep = "/", remove = FALSE)
+
+trawl_76_01 <- trawl_76_01 %>%
+  mutate(
+    month = factor(
+      month,
+      levels = 1:12,
+      labels = month.abb,
+      ordered = TRUE
+    )
+  )
+
+trawl_02_25 <- trawl_02_25 %>%
+  mutate(
+    month = factor(
+      month,
+      levels = 1:12,
+      labels = month.abb,
+      ordered = TRUE
+    )
+  )
+
+combo_trawl <- bind_rows(trawl_76_01, trawl_02_25)
+combo_trawl$year <- as.numeric(combo_trawl$year)
+
+```
+
+### Joining Tables for Taxonomy
+
+```{r}
+trawl_joined <- combo_trawl %>%
+  left_join(taxonomy, by = "CommonName")
+
+trawl_counts_taxonomy <- trawl_joined %>% 
+  filter(CommonName != "No catch",Family != "NA") %>% 
+  
+  group_by(Location, year, Family) %>% 
+  summarize(Count = sum(Count, na.rm = TRUE)) 
+  
+```
+
+### Totaling Counts by location, year, and Species
+
+```{r}
+combo_trawl_counts <- combo_trawl %>% 
+  group_by(Location, year, CommonName) %>% 
+  summarize(Count = sum(Count, na.rm = TRUE)) %>% 
+  filter(CommonName != "No catch")
+```
+
+### Graphing time!
+
+```{r}
+count_year <- ggplot(data = combo_trawl_counts, mapping = aes(x = year, y = Count)) +
+  geom_point() +
+  facet_wrap(Location ~ .) +
+  ylim(0,250000)
+
+count_year
+```
+
+```{r warning = FALSE, message = FALSE}
+count_species <- ggplot(data = combo_trawl_counts, mapping = aes(x = year, y = Count)) +
+  geom_point(aes(color= Location)) +
+  geom_line(aes(color= Location)) +
+  facet_wrap(CommonName ~ ., scales = "free_y")
+
+count_species
+```
+
+```{r warning = FALSE, message = FALSE}
+count_total <- ggplot(data = combo_trawl_counts, mapping = aes(x = year, y = Count)) +
+  geom_point(aes(color=CommonName)) +
+  geom_smooth(aes(color=CommonName)) +
+  ylim(0,100000)
+
+count_total
+```
+
+```{r warning = FALSE, message = FALSE}
+count_family <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y = Count)) +
+  geom_point(aes(color= Location)) +
+  geom_line(aes(color= Location)) +
+  facet_wrap(Family ~ ., scales = "free_y")
+
+count_family
+```
+
+### Stacked Area
+
+```{r warning = FALSE, message = FALSE}
+count_area <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y = Count)) +
+  geom_area(aes(fill= Family)) +
+  facet_wrap(Location ~ ., scales = "free_y") +
+  scale_y_log10()
+
+count_area
+
+```
+
+```{r warning = FALSE, message = FALSE}
+count_area2 <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y = Count)) +
+  geom_area(aes(fill= Family)) +
+  scale_y_log10()
+
+count_area2
+
+```
+
+## Native vs Invasive
+
+```{r}
+native_trawl <- trawl_joined %>% 
+   filter(CommonName != "No catch",NonNative != "NA") %>%
+  group_by(Location, year, Family, NonNative) %>% 
+  summarize(Count = sum(Count, na.rm = TRUE)) 
+
+```
+
+```{r}
+count_nonnative <- ggplot(data = native_trawl, mapping = aes(x = year, y = Count)) +
+  geom_point(aes(color=NonNative)) +
+  facet_wrap(Location ~ .) +
+  ylim(0,250000)
+
+count_nonnative
+```
+
+```{r warning = FALSE, message = FALSE}
+native_area <- ggplot(data = native_trawl, mapping = aes(x = year, y = Count)) +
+  geom_area(aes(fill= NonNative)) +
+  facet_wrap(Location ~ .) +
+  scale_y_log10()
+
+native_area
+
+```

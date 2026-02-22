@@ -1,6 +1,6 @@
 #working with Peter tidy data
 
-install.packages("janitor")
+# install.packages("janitor")
 
 # load libraries -----
 library(tidyverse)
@@ -124,3 +124,43 @@ summary(seine_all_var)
 
 
 #End of scratch-------
+#goal separate date, make a talbe with date location, station code and the 11 variabes in temp 4
+
+#now()
+#print(now())
+# okay trying for location, station code, date, fishiD, common name from dt1
+
+p_1 <- dt1 %>% 
+  select(Location,StationCode,SampleDate,SampleTime, IEPFishCode,CommonName) # pick out columns of interest
+print(p_1)
+# see whats missing
+missing_data<- which(is.na(p_1$CommonName))
+print(missing_data)
+library(dplyr)
+
+# First join by IEPFishCode
+## taxonic details -----
+
+p_2 <- p_1 %>%
+ #join by IEPFishCode
+  left_join(
+  dt4 %>%select(IEPFishCode, Genus),
+by = "IEPFishCode",
+relationship = "many-to-many" # added this to silence the many to many relationship between x and y
+) %>% 
+  rename(genus_code= Genus) %>% 
+#join by CommonName
+left_join(
+  dt4 %>% select(CommonName, Genus),
+  by="CommonName",
+  relationship = "many-to-many"
+) %>% 
+  rename(genus_name = Genus) %>% 
+  # makes a new column using information from the two columns just created
+  mutate(genus= coalesce(genus_code,genus_name))
+ 
+head(p_2)
+print(head(p_2))
+# remove helper columns
+p_2[c("genus_code", "genus_name")]<-list(NULL)
+print(p_2)

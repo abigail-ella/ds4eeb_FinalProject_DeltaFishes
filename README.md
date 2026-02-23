@@ -146,6 +146,9 @@ risk-of-bias assessment tool (see Boyd et al. 2022) and registering
 (*sensu* Popovic et al. 2024) a description of our study with Malin
 (sort of an informal registration).
 
+Ambrosio:
+Exploring sein data. Made a table with: date, location, long, lat, family, genus, sp, common name, station code. with the end goal to measure community diversity. Having the lat long will allow us to map the species 
+
 ##### Refine
 
 Early discoveries should lead to the development of some testable

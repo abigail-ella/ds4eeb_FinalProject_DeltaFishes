@@ -294,16 +294,46 @@ ggplot(sampling_coverage, aes(x = month, y = samples, fill = factor(decade))) +
 ```
 Ok so 1990 and on have the most sampling --  maybe we should focus on those?
 
-##Flow Patterns Anually and Seasonally
+##Flow Patterns Seasonally
 ```{r}
+#Daily flow patterns (I think)
+daily_flow <- combo_trawl %>%
+  group_by(year, season, SampleDate) %>%
+  summarise(
+    daily_flow = mean(FlowmeterDifference, na.rm = TRUE),
+    .groups = "drop"
+  )
 
+#Seasonal flow averages
+seasonal_flow <- daily_flow %>%
+  group_by(year, season) %>%
+  summarise(
+    mean_flow = mean(daily_flow, na.rm = TRUE),
+    max_flow  = max(daily_flow, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(seasonal_flow, aes(x = season, y = mean_flow, fill = season)) +
+  geom_boxplot() +
+  theme_minimal() 
+```
+##FLow Patterns Annually
+```{r}
+annual_flow <- seasonal_flow %>%
+  group_by(year) %>%
+  summarise(total_flow = sum(mean_flow, na.rm = TRUE))
+
+ggplot(annual_flow, aes(x = year, y = total_flow)) +
+  geom_line(color = "blue") +
+  geom_point() +
+  theme_minimal()
 ```
 
 
 #Salmonid Focus
 Now I want to focus specifically on salmonids
 
-#salmonids over years
+##salmonids over years
 ```{r}
 salmonids_by_year <- combo_trawl %>%
   filter(!is.na(CommonName)) %>%
@@ -329,31 +359,57 @@ ggplot(salmonids_by_year %>%
   theme_minimal()
 
 ```
-#looking at avg water temp by year
+##looking at avg water temp by year
 ```{r}
-#Cal avg water etmp by year
+#Cal avg water temp by year
 avg_temp_by_year <- combo_trawl %>%
   group_by(year) %>%
   summarise(avg_temp = mean(WaterTemp, na.rm = TRUE),
             .groups = "drop")
 
+#Filter for chinook & steelhead individually
+ch_by_year <- salmonids_by_year %>% 
+  filter(CommonName == "Chinook Salmon")
+sh_by_year <- salmonids_by_year %>% 
+  filter(CommonName == "steelhead")
+
 #temp/ salmon plot data
-temp_sal_plot_data <- left_join(salmonids_by_year, avg_temp_by_year, by = "year")
+temp_ch_data <- left_join(ch_by_year, avg_temp_by_year, by = "year")
+temp_sh_data <- left_join(sh_by_year, avg_temp_by_year, by = "year")
 
-#Scale for dual axis plotting
-scale_factor <- max(temp_sal_plot_data$count, na.rm = TRUE) / 
-                max(temp_sal_plot_data$avg_temp, na.rm = TRUE)
-
-temp_sal_plot_data <- temp_sal_plot_data %>%
+#Scale for dual axis plotting chinook
+scale_factor_ch <- max(temp_ch_data$count, na.rm = TRUE) / 
+                max(temp_ch_data$avg_temp, na.rm = TRUE)
+temp_ch_data <- temp_ch_data %>%
   mutate(temp_scaled = avg_temp * scale_factor)
 
-#Dual axis plot
-ggplot(temp_sal_plot_data, aes(x = year)) +
+#Scale for dual axis plotting steelhead
+scale_factor_sh <- max(temp_sh_data$count, na.rm = TRUE) / 
+                max(temp_sh_data$avg_temp, na.rm = TRUE)
+temp_sh_data <- temp_sh_data %>%
+  mutate(temp_scaled = avg_temp * scale_factor)
+
+
+#Dual axis plot chinook 
+ggplot(temp_ch_data, aes(x = year)) +
   geom_line(aes(y = count, color = CommonName), size = 1) +
   geom_line(aes(y = temp_scaled, color = "Avg Water Temp"), 
             linetype = "dashed", size = 1) +
   scale_y_continuous(
-    name = "Salmon Count",
+    name = "Chinook Count",
+    sec.axis = sec_axis(~ . / scale_factor,
+                        name = "Average Water Temperature")
+  ) +
+  
+  theme_minimal() 
+
+#Dual axis plot steelhead 
+ggplot(temp_sh_data, aes(x = year)) +
+  geom_line(aes(y = count, color = CommonName), size = 1) +
+  geom_line(aes(y = temp_scaled, color = "Avg Water Temp"), 
+            linetype = "dashed", size = 1) +
+  scale_y_continuous(
+    name = "Chinook Count",
     sec.axis = sec_axis(~ . / scale_factor,
                         name = "Average Water Temperature")
   ) +

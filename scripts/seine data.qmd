@@ -1312,6 +1312,17 @@ library(chron)
 If you've just downloaded the data from EDI, the raw data are in your workspace. Otherwise, retrieve them from your local directory (e.g., `dt3 <- readRDS(".../dt3.rds"`).
 
 ```{r}
+# retrieve raw DJFMP data from local repository
+
+dt1 <- readRDS("Pete_local_data/dt1.rds") # trawl 1978-2001
+dt2 <- readRDS("Pete_local_data/dt2.rds") # trawl 2002-2025
+dt3 <- readRDS("Pete_local_data/dt3.rds") # beach seines
+dt4 <- readRDS("Pete_local_data/dt4.rds") # names and tagging meta data
+dt5 <- readRDS("Pete_local_data/dt5.rds") # GIS data for locations & stations
+
+```
+
+```{r}
 #| label: data exploration
 #| results: hide
 #| 
@@ -1328,7 +1339,7 @@ str(dt1)
 head(dt2)
 range(dt2$SampleDate) # more date formatting issues; note that data are NOT arranged by date
 
-## taxonic details -----
+## taxonomic details -----
 head(dt4) # taxonomic details; use to filter dt1, dt2 & dt3 for fishes
 dt4 %>% filter(Class == "Osteichthyes") # Sebastes auriculatus, Embiotoca lateralis, Oligocottus maculosus ARE Actinopterygii!
 dt4 %>% filter(Phylum == "Chordata") %>% select(CommonName, NonNative, Family, Genus, Species)
@@ -1421,27 +1432,28 @@ Looking at the seine volume data, I have little confidence that these values wer
 The goal here is to develop a data set using a reduced set of variables (not all are germane to this study), pivot to wide format and add station location (latitude and longitude. This should be the dataframe that we'll use for analyses.
 
 ```{r}
-# reduced variable number
-seine <- 
+# reduced variable number & remove fish NOT identified to species
+seine_long <- 
   seine_all_var %>% 
-  select(c(location:date, water_temp, turbidity_fnu:specific_conductance, iep_fish_code:common_name, fork_length, race_by_length, race_by_tag, count))
+  select(c(location:date, water_temp, turbidity_fnu:specific_conductance, iep_fish_code:common_name, fork_length, race_by_length, race_by_tag, count)) %>% 
+  filter(!grepl("unknown", common_name))
 
-write_rds(seine, "Pete_local_data/seine.rds")
+write_rds(seine_long, "Pete_local_data/seine.rds")
 
 # wide format
-seine_w <-
-  seine %>% 
+seine <-
+  seine_long %>% 
   pivot_wider(id_cols = location:iep_fish_code, 
               names_from = common_name, 
-              values_from = count)
+              values_from = count,
+              values_fn = sum,
+              values_fill = 0) %>% 
+  select(-c(iep_fish_code, 'No catch')) %>% 
+  clean_names()
 
-# check: no duplicates
-seine_w %>% 
-  summarise(n = n(), .by = c(location, region_code, station_code, date, water_temp, turbidity_fnu,
-  specific_conductance, iep_fish_code)) %>% 
-  filter(n > 1L)
+head(seine)
 
-write_rds(seine_w, "Pete_local_data/seine_w.rds")
+write_rds(seine, "Pete_local_data/seine.rds")
 ```
 
 ## Field Methods
@@ -1453,20 +1465,60 @@ BEACH SEINE: We use beach seines to evaluate the spatial distribution of fishes 
 ## Initial Patterns
 
 ```{r}
-library(vegan)
-specnumber(seine_w[c(9:128)])
-specnumber(unlist(seine_w[,c(9:128)])) # Number of species per site
+test <- slice_sample(seine[, c(3,4,8:12)], n = 25) %>% print()
 
-diversity(seine_w, index = "shannon") # Shannon index
-diversity(seine_w, index = "simpson") # Simpson index
-H <- diversity(seine_w, "shannon")
-S <- specnumber(seine_w)
+test %>% group_by(year(date)) %>% summarise(chn = sum(chinook_salmon))
+
+tule <- 
+  seine %>% 
+  group_by(year = year(date)) %>% 
+  summarise(tule_perch = sum(tule_perch)) %>% 
+  print(n = Inf)
+
+library(ggplot2)
+ggplot(tule, aes(x = year, y = tule_perch)) +
+  geom_point()
+
+
+seine %>% 
+  mutate(year = year(date),
+         tule.perch = integer('Tule Perch')) %>% 
+  relocate(year, .before = date) %>% 
+  select(year, tule.perch) %>% 
+  group_by(year) %>% 
+  summarise(tule.perch = sum(., na.rm = T))
+
+seine[,8:114] %>% filter('No catch' != 0)
+sum(seine[3,8:114])
+
+
+  group_by(year) %>% 
+  summarise(tule.perch = sum('Tule Perch', na.rm = T))
+
+
+
+library(vegan)
+# specnumber(seine[c(8:114)])
+specnumber(unlist(seine[,c(8:114)])) # Number of species per site
+
+diversity(seine[,8:114], index = "shannon") # Shannon index
+diversity(seine, index = "simpson") # Simpson index
+H <- diversity(seine[,8:114], "shannon")
+S <- specnumber(seine[,8:114])
 (J <- H / log(S))
 ```
 
 ## SCRATCH
 
 ```{r}
+temp <- seine_all_var[1:6, c(1,4,21,22)]
+temp %>% mutate(common_name = as.character(common_name))
+temp %>% filter(str_detect(common_name, "//unknown$"))
+temp %>% filter(str_detect(common_name, "//almon$"))
+
+temp %>% filter(endsWith(common_name, "nown"))
+
+temp %>% filter(!grepl("unknown", common_name))
 
 library(vegan)
 specnumber(seine_w[1:6,c(3:4,8:11)])

@@ -4,3 +4,4 @@
 .Ruserdata
 data/processed/*.csv
 .RDataTmp1
+.RDataTmp2

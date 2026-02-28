@@ -18,6 +18,7 @@ library(dplyr)
 #reading data
 sample_sites <- read.csv(here("data","processed","sample_sites.csv"))
 taxonomy <- read.csv(here("data","processed","taxonomy.csv"))
+seine <- read.csv(here("data","processed","seine_76_25.csv"))
 trawl_02_25 <- read.csv(here("data","processed","trawl_02_25.csv"))
 trawl_76_01 <- read.csv(here("data","processed","trawl_76_01.csv"))
 ```
@@ -28,6 +29,9 @@ trawl_76_01 <- trawl_76_01 %>%
   separate(SampleDate, into = c('month', 'day', 'year'), sep = "/", remove = FALSE)
 
 trawl_02_25 <- trawl_02_25 %>% 
+  separate(SampleDate, into = c('month', 'day', 'year'), sep = "/", remove = FALSE)
+
+seine <- seine %>% 
   separate(SampleDate, into = c('month', 'day', 'year'), sep = "/", remove = FALSE)
 
 trawl_76_01 <- trawl_76_01 %>%
@@ -50,6 +54,17 @@ trawl_02_25 <- trawl_02_25 %>%
     )
   )
 
+seine <- seine %>%
+  mutate(
+    month = factor(
+      month,
+      levels = 1:12,
+      labels = month.abb,
+      ordered = TRUE
+    )
+  )
+
+
 combo_trawl <- bind_rows(trawl_76_01, trawl_02_25)
 combo_trawl$year <- as.numeric(combo_trawl$year)
 
@@ -59,7 +74,7 @@ combo_trawl$year <- as.numeric(combo_trawl$year)
 
 ```{r}
 trawl_joined <- combo_trawl %>%
-  left_join(taxonomy, by = "CommonName")
+  left_join(taxonomy, by = "OrganismCode")
 
 trawl_counts_taxonomy <- trawl_joined %>% 
   filter(CommonName != "No catch",Family != "NA") %>% 
@@ -69,6 +84,13 @@ trawl_counts_taxonomy <- trawl_joined %>%
   
 ```
 
+```{r}
+#joing seine and toxonmy tables
+seine_tax <- seine %>%
+  left_join(taxonomy, by = "OrganismCode")
+
+```
+
 ### Totaling Counts by location, year, and Species
 
 ```{r}
@@ -76,6 +98,25 @@ combo_trawl_counts <- combo_trawl %>%
   group_by(Location, year, CommonName) %>% 
   summarize(Count = sum(Count, na.rm = TRUE)) %>% 
   filter(CommonName != "No catch")
+```
+
+```{r}
+seine_counts <- seine_tax %>% 
+  group_by(Location, year, OrganismCode) %>% 
+  summarize(Count = sum(Count, na.rm = TRUE)) %>% 
+  filter(OrganismCode != "NOFISH")
+```
+
+### Totaling Counts of Unique Species In Seine Data
+
+```{r}
+seine_richness <- seine_tax %>% 
+  select(Location, year, OrganismCode, CommonName.x, Family, NonNative) %>% 
+  group_by(Location, year, OrganismCode, NonNative) %>% 
+  summarize(count = n()) %>% #creates a column that totals the columns of that loc, year, and organism
+  filter(OrganismCode != "NOFISH") %>% 
+  group_by(Location, year, NonNative) %>% 
+  summarize(count = n()) # allows us to total the unqiue number of organisms in each location each year seperated by native status
 ```
 
 ### Graphing time!
@@ -164,4 +205,12 @@ native_area <- ggplot(data = native_trawl, mapping = aes(x = year, y = Count)) +
 
 native_area
 
+```
+
+## Seine Data Graphing
+
+### native non native
+
+```{r}
+ggplot()
 ```

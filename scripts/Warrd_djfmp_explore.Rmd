@@ -76,7 +76,59 @@ combo_trawl$year <- as.numeric(combo_trawl$year)
 
 ```
 
-#Unique species over the years
+
+#Long term Trends of Species
+
+First, I am going to explore long term trends of the data, abundance of species, environmental trends etc. This will help to figure out a direction to go forward with.  
+
+##Total Abundance Shifts over time
+Ok first want to look at total abundance has changed over time for all species 
+```{r}
+annual_abundance <- combo_trawl %>%
+  group_by(year) %>%
+  summarise(total_fish = sum(Count, na.rm = TRUE))
+
+ggplot(annual_abundance, aes(year, total_fish)) +
+  geom_line() +
+  theme_minimal()
+```
+Interestingly a huge spike at the beginning of sampling (sampling effort?) with highs and lows throughout the rest of the years sampled. What would happen if we filter out that first peak?
+
+```{r}
+ggplot(subset(annual_abundance, year >1978 ), aes(year, total_fish)) +
+  geom_line() +
+  theme_minimal()
+```
+Interesting to see certain peaks more clearly.
+
+##Species richenss changes over time
+```{r}
+annual_richness <- combo_trawl %>%
+  group_by(year) %>%
+  summarise(richness = n_distinct(CommonName))
+
+ggplot(annual_richness, aes(year, richness)) +
+  geom_line() +
+  theme_minimal()
+```
+
+##Most abundant species
+
+What are the top 10 most abundant species?
+```{r}
+top_species <- combo_trawl %>%
+  group_by(CommonName) %>%
+  summarise(total = sum(Count, na.rm = TRUE)) %>%
+  arrange(desc(total)) %>%
+  slice(1:10) %>%
+  pull(CommonName)
+
+print(top_species)
+```
+
+
+##Unique species over the years
+I want to first see how many unique species there are in all of the trawl data. Then I want to look at the abundace of each individual species by year 
 ```{r}
 unique(combo_trawl$CommonName)
 
@@ -98,7 +150,190 @@ ggplot(species_by_year, aes(x = year, y = count, color = CommonName)) +
 
 
 ```
-#salmonids over years
+Abundances are so variable by species this is difficult to tell honestly. The magnitude is so different. 
+
+
+#Long Term Trends -- Environmental Variables 
+
+##Looking at seasonal water temp differences
+```{r}
+ggplot(combo_trawl, aes(x = month, y = WaterTemp)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.7) +
+  labs(
+    x = "Month",
+    y = "Water Temperature"
+  ) +
+  theme_minimal()
+
+seasonal_means <- combo_trawl %>%
+  group_by(month) %>%
+  summarise(
+    avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(seasonal_means, aes(x = month, y = avg_WaterTemp, group = 1)) +
+  geom_point(size = 3) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Average Seasonal Cycle of Water Temperature",
+    x = "Month",
+    y = "Average Water Temperature"
+  ) +
+  theme_minimal()
+
+
+combo_trawl <- combo_trawl %>%
+  mutate(
+    season = case_when(
+      month %in% c("Dec", "Jan", "Feb") ~ "Winter",
+      month %in% c("Mar", "Apr", "May") ~ "Spring",
+      month %in% c("Jun", "Jul", "Aug") ~ "Summer",
+      month %in% c("Sep", "Oct", "Nov") ~ "Fall"
+    )
+  )
+
+ggplot(combo_trawl, aes(x = season, y = WaterTemp)) +
+  #facet_wrap(~year) +
+  geom_boxplot(fill = "tan", alpha = 0.7)
+
+```
+
+##Are seasonal water temps sig different?
+```{r}
+seasonal_water_temp_avg <- combo_trawl %>%
+  group_by(year, season) %>%
+  summarise(
+    avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+anova_waterseason1 <- aov(avg_WaterTemp ~ season, data = seasonal_water_temp_avg)
+summary(anova_waterseason1)
+```
+
+##How has water temp changed over time 
+
+```{r}
+annual_water_temp <- combo_trawl %>%
+  group_by(year) %>%
+  summarise(
+    mean_temp = mean(WaterTemp, na.rm = TRUE)
+  )
+
+ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
+  geom_line(color = "firebrick", size = 1) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  geom_point(color = "firebrick") +
+  theme_minimal()
+```
+Let's look at how trends have changes over years
+```{r}
+#Changing the sample date column to recognize as date - ugh
+combo_trawl$SampleDate <- as.Date(combo_trawl$SampleDate, format = "%m/%d/%Y")
+
+#Get DOY for mapping
+combo_trawl <- combo_trawl %>%
+   mutate(DOY = yday(SampleDate))
+
+#avg temp per day since multiple sampling per day
+daily_water_temp <- combo_trawl %>%
+  group_by(year, DOY) %>%
+  summarise(
+    mean_temp = mean(WaterTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(daily_water_temp, aes(x = DOY, y = mean_temp, group = year, color = factor(year))) +
+  geom_line(alpha = 0.7) +
+  theme_minimal()
+
+ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
+  geom_line(color = "gray70", alpha = 0.5) +
+  geom_line(
+    data = subset(daily_water_temp, year >= 2020),
+    aes(color = factor(year)),
+    size = 1
+  ) +
+  theme_minimal()
+
+```
+Ok interesting but a little crazy, let's try by decade. I want to see if peaks or falls are happening sooner or later than previously.
+
+```{r}
+
+#Get decade for mapping
+combo_trawl <- combo_trawl %>%
+  mutate(
+    decade = floor(year / 10) * 10
+  )
+
+decade_water_temp <- combo_trawl %>%
+  group_by(decade, DOY) %>%
+  summarise(
+    mean_temp = mean(WaterTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(decade_water_temp, aes(DOY, mean_temp, color = factor(decade))) +
+  geom_line(size = 0.7) +
+  theme_minimal()
+```
+
+
+##Ok 70s and 80s looks like they didn't really sample in the summer months? Is that true?
+```{r}
+# Count number of samples per decade and month
+sampling_coverage <- combo_trawl %>%
+  group_by(decade, month) %>%
+  summarise(samples = n(), .groups = "drop")
+
+# Plot sampling frequency
+ggplot(sampling_coverage, aes(x = month, y = samples, fill = factor(decade))) +
+  geom_col(position = "dodge") 
+```
+Ok so 1990 and on have the most sampling --  maybe we should focus on those?
+
+##Flow Patterns Seasonally
+```{r}
+#Daily flow patterns (I think)
+daily_flow <- combo_trawl %>%
+  group_by(year, season, SampleDate) %>%
+  summarise(
+    daily_flow = mean(FlowmeterDifference, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+#Seasonal flow averages
+seasonal_flow <- daily_flow %>%
+  group_by(year, season) %>%
+  summarise(
+    mean_flow = mean(daily_flow, na.rm = TRUE),
+    max_flow  = max(daily_flow, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(seasonal_flow, aes(x = season, y = mean_flow, fill = season)) +
+  geom_boxplot() +
+  theme_minimal() 
+```
+##FLow Patterns Annually
+```{r}
+annual_flow <- seasonal_flow %>%
+  group_by(year) %>%
+  summarise(total_flow = sum(mean_flow, na.rm = TRUE))
+
+ggplot(annual_flow, aes(x = year, y = total_flow)) +
+  geom_line(color = "blue") +
+  geom_point() +
+  theme_minimal()
+```
+
+
+#Salmonid Focus
+Now I want to focus specifically on salmonids
+
+##salmonids over years
 ```{r}
 salmonids_by_year <- combo_trawl %>%
   filter(!is.na(CommonName)) %>%
@@ -124,31 +359,57 @@ ggplot(salmonids_by_year %>%
   theme_minimal()
 
 ```
-#looking at avg water temp by year
+##looking at avg water temp by year
 ```{r}
-#Cal avg water etmp by year
+#Cal avg water temp by year
 avg_temp_by_year <- combo_trawl %>%
   group_by(year) %>%
   summarise(avg_temp = mean(WaterTemp, na.rm = TRUE),
             .groups = "drop")
 
+#Filter for chinook & steelhead individually
+ch_by_year <- salmonids_by_year %>% 
+  filter(CommonName == "Chinook Salmon")
+sh_by_year <- salmonids_by_year %>% 
+  filter(CommonName == "steelhead")
+
 #temp/ salmon plot data
-temp_sal_plot_data <- left_join(salmonids_by_year, avg_temp_by_year, by = "year")
+temp_ch_data <- left_join(ch_by_year, avg_temp_by_year, by = "year")
+temp_sh_data <- left_join(sh_by_year, avg_temp_by_year, by = "year")
 
-#Scale for dual axis plotting
-scale_factor <- max(temp_sal_plot_data$count, na.rm = TRUE) / 
-                max(temp_sal_plot_data$avg_temp, na.rm = TRUE)
-
-temp_sal_plot_data <- temp_sal_plot_data %>%
+#Scale for dual axis plotting chinook
+scale_factor_ch <- max(temp_ch_data$count, na.rm = TRUE) / 
+                max(temp_ch_data$avg_temp, na.rm = TRUE)
+temp_ch_data <- temp_ch_data %>%
   mutate(temp_scaled = avg_temp * scale_factor)
 
-#Dual axis plot
-ggplot(temp_sal_plot_data, aes(x = year)) +
+#Scale for dual axis plotting steelhead
+scale_factor_sh <- max(temp_sh_data$count, na.rm = TRUE) / 
+                max(temp_sh_data$avg_temp, na.rm = TRUE)
+temp_sh_data <- temp_sh_data %>%
+  mutate(temp_scaled = avg_temp * scale_factor)
+
+
+#Dual axis plot chinook 
+ggplot(temp_ch_data, aes(x = year)) +
   geom_line(aes(y = count, color = CommonName), size = 1) +
   geom_line(aes(y = temp_scaled, color = "Avg Water Temp"), 
             linetype = "dashed", size = 1) +
   scale_y_continuous(
-    name = "Salmon Count",
+    name = "Chinook Count",
+    sec.axis = sec_axis(~ . / scale_factor,
+                        name = "Average Water Temperature")
+  ) +
+  
+  theme_minimal() 
+
+#Dual axis plot steelhead 
+ggplot(temp_sh_data, aes(x = year)) +
+  geom_line(aes(y = count, color = CommonName), size = 1) +
+  geom_line(aes(y = temp_scaled, color = "Avg Water Temp"), 
+            linetype = "dashed", size = 1) +
+  scale_y_continuous(
+    name = "Chinook Count",
     sec.axis = sec_axis(~ . / scale_factor,
                         name = "Average Water Temperature")
   ) +
@@ -221,82 +482,20 @@ ggplot(avg_temp_table2, aes(x = as.numeric(year), y = avg_WaterTemp, color = Loc
 
 
 ```
-#Looking at seasonal water temp differences
-```{r}
-ggplot(trawl_76_01, aes(x = month, y = WaterTemp)) +
-  geom_boxplot(fill = "skyblue", alpha = 0.7) +
-  labs(
-    x = "Month",
-    y = "Water Temperature"
-  ) +
-  theme_minimal()
-
-ggplot(trawl_02_25, aes(x = month, y = WaterTemp)) +
-  geom_boxplot(fill = "skyblue", alpha = 0.7) +
-  labs(
-    x = "Month",
-    y = "Water Temperature"
-  ) +
-  theme_minimal()
-
-seasonal_means <- trawl_76_01 %>%
-  group_by(month) %>%
-  summarise(
-    avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-ggplot(seasonal_means, aes(x = month, y = avg_WaterTemp, group = 1)) +
-  geom_point(size = 3) +
-  geom_line(linewidth = 1) +
-  labs(
-    title = "Average Seasonal Cycle of Water Temperature",
-    x = "Month",
-    y = "Average Water Temperature"
-  ) +
-  theme_minimal()
 
 
-trawl_76_01 <- trawl_76_01 %>%
-  mutate(
-    season = case_when(
-      month %in% c("Dec", "Jan", "Feb") ~ "Winter",
-      month %in% c("Mar", "Apr", "May") ~ "Spring",
-      month %in% c("Jun", "Jul", "Aug") ~ "Summer",
-      month %in% c("Sep", "Oct", "Nov") ~ "Fall"
-    )
-  )
 
-ggplot(trawl_76_01, aes(x = season, y = WaterTemp)) +
-  #facet_wrap(~year) +
-  geom_boxplot(fill = "tan", alpha = 0.7)
-
-```
-Ok fixed water temp seasonality 
-
-Are seasonal water temps sig different?
-```{r}
-seasonal_avg_76_01 <- trawl_76_01 %>%
-  group_by(year, season) %>%
-  summarise(
-    avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-anova_season1 <- aov(avg_WaterTemp ~ season, data = seasonal_avg_76_01)
-summary(anova_season1)
-```
-
+#Let's start map exploration 
 Basic Map of Sample Sites
 ```{r}
 library(sf)
 library(terra)
 library(dplyr)
 library(spData)
-#install.packages("spDataLarge", repos = "https://nowosad.github.io/drat/", type = "source")
+install.packages("spDataLarge", repos = "https://nowosad.github.io/drat/", type = "source")
 
 library(spDataLarge)
-#install.packages("tmap", repos = c("https://r-tmap.r-universe.dev","https://cloud.r-project.org"))
+install.packages("tmap", repos = c("https://r-tmap.r-universe.dev","https://cloud.r-project.org"))
 library(tmap)    # for static and interactive maps
 library(leaflet) # for interactive maps
 library(ggplot2) # tidyverse data visualization package
@@ -308,15 +507,16 @@ library(elevatr) #elevations
 library(nhdplusTools) #NHD datasets
 
 ```
-
+##BB of coordinates of delta
 ```{r}
 # Bounding box coordinates (min lon, min lat, max lon, max lat)
-delta_bbox <- st_bbox(c(xmin = -122.7, ymin = 37.9, xmax = -121.3, ymax = 38.8),
+delta_bbox <- st_bbox(c(xmin = -121.25, ymin = 37.47, xmax = -122.41, ymax = 39.37),
                       crs = st_crs(4326))
 
 delta_bbox_sf <- st_as_sfc(delta_bbox)
 ```
 
+##Mapping water
 ```{r}
 #waterways
 water_osm <- opq(bbox = delta_bbox) %>%
@@ -331,11 +531,15 @@ rivers <- water_osm$osm_lines
 #lakes 
 lakes_osm <- opq(bbox = delta_bbox) %>%
   add_osm_feature(key = "natural", value = "water") %>%
+  add_osm_feature(key = "water",
+                  value = c("lake", "reservoir", "bay", "lagoon"),
+                  match_case = FALSE) %>%
   osmdata_sf()
 
 water_polygons <- lakes_osm$osm_polygons
 ```
 
+##Map of waterways
 ```{r}
 ggplot() +
   geom_sf(data = st_crop(water_polygons, delta_bbox),
@@ -347,26 +551,15 @@ ggplot() +
   theme_minimal()
 ```
 
-
-```{r}
-tmap_mode("plot")  # or "view" for interactive
-
-tm_shape(delta_bbox_sf) +
-  tm_polygons(alpha = 0) +
-tm_shape(water_polygons) +
-  tm_fill(col = "lightblue", alpha = 0.5) +
-tm_shape(rivers) +
-  tm_lines(col = "blue") +
-tm_layout(title = "Sacramento–San Joaquin Delta")
-```
 ```{r}
 sample_sites_sf <- st_as_sf(
   sample_sites,
-  coords = c("Longitude", "Latitude"),  # order matters!
+  coords = c("Longitude", "Latitude"),
   crs = 4326
-)
+) 
 ```
 
+##Map of sample sites
 ```{r}
 ggplot() +
   geom_sf(data = st_crop(water_polygons, delta_bbox),
@@ -378,4 +571,11 @@ ggplot() +
   geom_sf(data = sample_sites_sf, color = "red", size = 2) +
   theme_minimal()
 ```
+Ok that was difficult! I would like to find a way to reduce the amount of water shown, focusing primarily on bays estuaries and major rivers and figure out a better bb for the delta.
+
+Moving on...
+
+
+
+
 

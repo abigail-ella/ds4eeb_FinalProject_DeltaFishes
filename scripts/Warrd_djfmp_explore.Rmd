@@ -381,23 +381,23 @@ temp_sh_data <- left_join(sh_by_year, avg_temp_by_year, by = "year")
 scale_factor_ch <- max(temp_ch_data$count, na.rm = TRUE) / 
                 max(temp_ch_data$avg_temp, na.rm = TRUE)
 temp_ch_data <- temp_ch_data %>%
-  mutate(temp_scaled = avg_temp * scale_factor)
+  mutate(temp_scaled = avg_temp * scale_factor_ch)
 
 #Scale for dual axis plotting steelhead
 scale_factor_sh <- max(temp_sh_data$count, na.rm = TRUE) / 
                 max(temp_sh_data$avg_temp, na.rm = TRUE)
 temp_sh_data <- temp_sh_data %>%
-  mutate(temp_scaled = avg_temp * scale_factor)
+  mutate(temp_scaled = avg_temp * scale_factor_sh)
 
 
 #Dual axis plot chinook 
 ggplot(temp_ch_data, aes(x = year)) +
   geom_line(aes(y = count, color = CommonName), size = 1) +
   geom_line(aes(y = temp_scaled, color = "Avg Water Temp"), 
-            linetype = "dashed", size = 1) +
+            linetype = "solid", size = 1) +
   scale_y_continuous(
     name = "Chinook Count",
-    sec.axis = sec_axis(~ . / scale_factor,
+    sec.axis = sec_axis(~ . / scale_factor_ch,
                         name = "Average Water Temperature")
   ) +
   
@@ -407,10 +407,10 @@ ggplot(temp_ch_data, aes(x = year)) +
 ggplot(temp_sh_data, aes(x = year)) +
   geom_line(aes(y = count, color = CommonName), size = 1) +
   geom_line(aes(y = temp_scaled, color = "Avg Water Temp"), 
-            linetype = "dashed", size = 1) +
+            linetype = "solid", size = 1) +
   scale_y_continuous(
     name = "Chinook Count",
-    sec.axis = sec_axis(~ . / scale_factor,
+    sec.axis = sec_axis(~ . / scale_factor_sh,
                         name = "Average Water Temperature")
   ) +
   
@@ -425,52 +425,25 @@ ggplot(temp_sh_data, aes(x = year)) +
 
 #Looking at avg water temp by year and location
 ```{r}
-avg_temp_table1 <- trawl_76_01 %>%
+avg_temp_table <- combo_trawl %>%
   group_by(year, Location) %>%
   summarise(
     avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
     .groups = "drop"
   )
 
-avg_temp_table1
+avg_temp_table
 
 
-ggplot(avg_temp_table1, aes(x = as.numeric(year), y = avg_WaterTemp, color = Location)) +
-  geom_point(size = 3) +
-  geom_line(linewidth = 1) +
+ggplot(avg_temp_table, aes(x = as.numeric(year), y = avg_WaterTemp, color = Location)) +
+  geom_point(size = 2) +
+  geom_line() +
    geom_smooth(
       aes(group = 1),
       method = "lm",
       se = TRUE,
       color = "black",
-      linewidth = 1.2,
-      linetype = "dashed"
-    ) +
-  labs(
-    title = "Average Water Temperature Over Time by Location",
-    x = "Year",
-    y = "Average Water Temperature"
-  ) +
-  theme_minimal()
-
-avg_temp_table2 <- trawl_02_25 %>%
-  group_by(year, Location) %>%
-  summarise(
-    avg_WaterTemp = mean(WaterTemp, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-avg_temp_table2
-
-ggplot(avg_temp_table2, aes(x = as.numeric(year), y = avg_WaterTemp, color = Location)) +
-  geom_point(size = 3) +
-  geom_line(linewidth = 1) +
-   geom_smooth(
-      aes(group = 1),
-      method = "lm",
-      se = TRUE,
-      color = "black",
-      linewidth = 1.2,
+      linewidth = 1,
       linetype = "dashed"
     ) +
   labs(
@@ -492,10 +465,10 @@ library(sf)
 library(terra)
 library(dplyr)
 library(spData)
-install.packages("spDataLarge", repos = "https://nowosad.github.io/drat/", type = "source")
+#install.packages("spDataLarge", repos = "https://nowosad.github.io/drat/", type = "source")
 
 library(spDataLarge)
-install.packages("tmap", repos = c("https://r-tmap.r-universe.dev","https://cloud.r-project.org"))
+#install.packages("tmap", repos = c("https://r-tmap.r-universe.dev","https://cloud.r-project.org"))
 library(tmap)    # for static and interactive maps
 library(leaflet) # for interactive maps
 library(ggplot2) # tidyverse data visualization package

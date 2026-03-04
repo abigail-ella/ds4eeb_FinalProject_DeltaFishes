@@ -76,11 +76,11 @@ combo_trawl$year <- as.numeric(combo_trawl$year)
 trawl_joined <- combo_trawl %>%
   left_join(taxonomy, by = "OrganismCode")
 
-trawl_counts_taxonomy <- trawl_joined %>% 
-  filter(CommonName != "No catch",Family != "NA") %>% 
+#trawl_counts_taxonomy <- trawl_joined %>% 
+  #filter(CommonName != "No catch",Family != "NA") %>% 
   
-  group_by(Location, year, Family) %>% 
-  summarize(Count = sum(Count, na.rm = TRUE)) 
+  #group_by(Location, year, Family) %>% 
+  #summarize(Count = sum(Count, na.rm = TRUE)) 
   
 ```
 
@@ -213,4 +213,254 @@ native_area
 
 ```{r}
 ggplot()
+```
+
+## Trawl Data on Focal Species
+
+look at how anchovies salmonids chinnok coorelate over time by location and by temperature.
+
+#### Organizing counts of focal salmonids per year by station
+
+```{r}
+#creating a filtered data table with counts of salmonids 
+focal_trawl_counts <- combo_trawl %>% 
+  filter(OrganismCode == "CHN"| OrganismCode ==  "CHO" | OrganismCode ==  "RBT") %>% 
+  group_by(StationCode, year, OrganismCode) %>% 
+  summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop")
+  
+```
+
+```{r}
+salmon_spp <- ggplot(data= focal_trawl_counts, aes(x = year, y = Count, fill = StationCode)) +
+  geom_line(aes(color = StationCode)) +
+  facet_wrap(OrganismCode ~., scales = "free_y")
+
+salmon_spp
+
+```
+
+```{r}
+salmon_spp <- ggplot(data= focal_trawl_counts, aes(x = year, y = Count )) +
+  geom_line() +
+  facet_wrap(OrganismCode ~., scales = "free_y")
+
+salmon_spp
+```
+
+```{r}
+salmon_loc <- ggplot(data= focal_trawl_counts, aes(x = year, y = Count, fill = OrganismCode)) +
+  geom_line(aes(color = OrganismCode)) +
+  facet_wrap(StationCode ~., scales = "free_y")
+
+salmon_loc
+```
+
+#### Organizing counts of focal salmonids per year by station (filtering by stations with abundant data)
+
+```{r}
+focal_filter <- combo_trawl %>% 
+  filter(OrganismCode == "CHN"| OrganismCode ==  "RBT") %>% 
+  filter(StationCode == "SB018M" | 
+        StationCode == "SB018N" |
+        StationCode == "SB018S" | 
+        StationCode == "SB018X" |
+        StationCode == "SJ054M" |
+        StationCode == "SR055M") %>% 
+  group_by(StationCode, year, OrganismCode) %>% 
+  summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop")
+  
+```
+
+```{r}
+salmon_spp_station <- ggplot(data= focal_filter, aes(x = year, y = Count, fill = StationCode)) +
+  geom_line(aes(color = StationCode)) +
+  facet_wrap(OrganismCode ~., scales = "free_y")
+
+salmon_spp_station
+
+```
+
+```{r}
+salmon_spp <- ggplot(data= focal_filter, aes(x = year, y = Count )) +
+  geom_line() +
+  facet_wrap(OrganismCode ~., scales = "free_y")
+
+salmon_spp
+```
+
+```{r}
+salmon_loc_2 <- ggplot(data= focal_trawl_counts, aes(x = year, y = Count, fill = OrganismCode)) +
+  geom_line(aes(color = OrganismCode)) +
+  facet_wrap(StationCode ~., scales = "free_y")
+
+salmon_loc_2
+```
+
+#### Including watertemp?
+
+```{r}
+focal_filter2 <- combo_trawl %>% 
+  filter(OrganismCode == "CHN"| OrganismCode ==  "RBT") %>% 
+  filter(StationCode == "SB018M" | 
+        StationCode == "SB018N" |
+        StationCode == "SB018S" | 
+        StationCode == "SB018X" |
+        StationCode == "SJ054M" |
+        StationCode == "SR055M") %>% 
+  group_by(year) %>% 
+  mutate(avg_temp = mean(WaterTemp, na.rm = TRUE), .groups = "drop") %>% 
+  group_by(StationCode, year, OrganismCode, avg_temp) %>% 
+  summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop")
+```
+
+```{r}
+#plot for temperature on salmon populations through time
+salmon_spp_station <- ggplot(data= focal_filter2, aes(x = year, y = Count, color = avg_temp)) +
+  geom_line() +
+  scale_color_gradient(low = "blue", high = "red") +
+  facet_wrap(OrganismCode ~., scales = "free_y",
+             labeller = labeller(
+               OrganismCode = c(
+                 "CHN" = "Chinook Salmon",
+                 "RBT" = "Steelhead"))) +
+  theme_classic()+
+  labs(
+  title = "Salmon Population Counts Through Time",
+  subtitle = "Colored by Average Annual Temperature",
+  x = "Year",
+  y = "Population Count",
+  color = "Avg Temp (°C)"
+)
+  
+
+
+salmon_spp_station
+```
+
+```{r}
+salmon_spp_station2 <- ggplot(data= focal_filter2, aes(x = avg_temp, y = Count, color = year)) +
+  geom_point() +
+  scale_color_gradient(low = "blue", high = "red") +
+  facet_wrap(OrganismCode ~., scales = "free_y") +
+  theme_classic()
+salmon_spp_station2
+```
+
+#### now for flow
+
+```{r}
+focal_filter_flow <- combo_trawl %>% 
+  filter(OrganismCode == "CHN"| OrganismCode ==  "RBT") %>% 
+  filter(StationCode == "SB018M" | 
+        StationCode == "SB018N" |
+        StationCode == "SB018S" | 
+        StationCode == "SB018X" |
+        StationCode == "SJ054M" |
+        StationCode == "SR055M") %>% 
+  group_by(year) %>% 
+  mutate(avg_flow = mean(FlowmeterDifference, na.rm = TRUE), .groups = "drop") %>% 
+  group_by(StationCode, year, OrganismCode, avg_flow) %>% 
+  summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop")
+```
+
+```{r}
+salmon_spp_station_flow <- ggplot(data= focal_filter_flow, aes(x = year, y = Count, color = avg_flow)) +
+  geom_line() +
+  scale_color_gradient(low = "blue", high = "red") +
+  facet_wrap(OrganismCode ~., scales = "free_y")
+
+
+salmon_spp_station_flow
+```
+
+```         
+```
+
+### salmonids over years (thanks for the base code abbie!)
+
+```{r}
+salmonids_by_year <- combo_trawl %>%
+  filter(!is.na(CommonName)) %>%
+  filter(CommonName == "Chinook Salmon" | CommonName == "steelhead") %>% 
+  group_by(year, CommonName) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(year, desc(count))
+
+salmonids_by_year
+
+#Chinook by year
+ggplot(salmonids_by_year %>% 
+         filter(CommonName =="Chinook Salmon"), aes(x = year, y = count)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal()
+
+#Steelhead by year
+ggplot(salmonids_by_year %>% 
+         filter(CommonName =="steelhead"), aes(x = year, y = count)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal()
+
+```
+
+### looking at avg water flow by year (adjusted for flow from temp code written by abbie)
+
+```{r}
+#Cal avg water temp by year
+avg_flow_by_year <- combo_trawl %>%
+  group_by(year) %>%
+  summarise(avg_flow = mean(FlowmeterDifference, na.rm = TRUE),
+            .groups = "drop")
+
+#Filter for chinook & steelhead individually
+ch_by_year <- salmonids_by_year %>% 
+  filter(CommonName == "Chinook Salmon")
+sh_by_year <- salmonids_by_year %>% 
+  filter(CommonName == "steelhead")
+
+#flow/ salmon plot data
+flow_ch_data <- left_join(ch_by_year, avg_flow_by_year, by = "year")
+flow_sh_data <- left_join(sh_by_year, avg_flow_by_year, by = "year")
+
+#Scale for dual axis plotting chinook
+scale_factor_ch <- max(flow_ch_data$count, na.rm = TRUE) / 
+                max(flow_ch_data$avg_flow, na.rm = TRUE)
+flow_ch_data <- flow_ch_data %>%
+  mutate(flow_scaled = avg_flow * scale_factor_ch)
+
+#Scale for dual axis plotting steelhead
+scale_factor_sh <- max(flow_sh_data$count, na.rm = TRUE) / 
+                max(flow_sh_data$avg_flow, na.rm = TRUE)
+flow_sh_data <- flow_sh_data %>%
+  mutate(flow_scaled = avg_flow * scale_factor_sh)
+
+
+#Dual axis plot chinook 
+ggplot(flow_ch_data, aes(x = year)) +
+  geom_line(aes(y = count, color = CommonName), size = 1) +
+  geom_line(aes(y = flow_scaled, color = "Avg Water Flow"), 
+            linetype = "solid", size = 1) +
+  scale_y_continuous(
+    name = "Chinook Count",
+    sec.axis = sec_axis(~ . / scale_factor_ch,
+                        name = "Average Water Flow")
+  ) +
+  
+  theme_minimal() 
+
+#Dual axis plot steelhead 
+ggplot(flow_sh_data, aes(x = year)) +
+  geom_line(aes(y = count, color = CommonName), size = 1) +
+  geom_line(aes(y = flow_scaled, color = "Avg Water Flow"), 
+            linetype = "solid", size = 1) +
+  scale_y_continuous(
+    name = "Chinook Count",
+    sec.axis = sec_axis(~ . / scale_factor_sh,
+                        name = "Average Water Flow")
+  ) +
+  
+  theme_minimal() 
+
+
 ```

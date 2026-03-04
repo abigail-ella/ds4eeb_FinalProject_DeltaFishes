@@ -318,8 +318,19 @@ focal_filter2 <- combo_trawl %>%
 salmon_spp_station <- ggplot(data= focal_filter2, aes(x = year, y = Count, color = avg_temp)) +
   geom_line() +
   scale_color_gradient(low = "blue", high = "red") +
-  facet_wrap(OrganismCode ~., scales = "free_y") +
-  theme_classic()
+  facet_wrap(OrganismCode ~., scales = "free_y",
+             labeller = labeller(
+               OrganismCode = c(
+                 "CHN" = "Chinook Salmon",
+                 "RBT" = "Steelhead"))) +
+  theme_classic()+
+  labs(
+  title = "Salmon Population Counts Through Time",
+  subtitle = "Colored by Average Annual Temperature",
+  x = "Year",
+  y = "Population Count",
+  color = "Avg Temp (°C)"
+)
   
 
 

@@ -206,3 +206,23 @@ pivot_wider(df,
             values_from = count, 
             values_fn = sum, 
             values_fill = 0)
+
+# edu resources -----
+# this looks great for handling streamflow, including cumulative discharge calculations:
+# https://waterdata.usgs.gov/blog/data-munging/#:~:text=We%20can%20use%20the%20handy,using%20group_by%20and%20mutate%20.
+
+
+# packages -----
+# EflowStats library calculates day of water year and more
+# see https://rdrr.io/github/USGS-R/EflowStats/
+
+remotes::install_github("USGS-R/EflowStats")
+# example
+# get_waterYearDay(x, wyMonth = 10L) 
+
+# where,
+# x	is a vector of class date, and
+# wyMonth is a numeric, the month of the year in which the water year starts
+# (1=January, 12=December)
+# wyMonth = 10L would be consistent with standard USGS usage
+

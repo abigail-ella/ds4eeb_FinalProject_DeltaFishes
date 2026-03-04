@@ -14,6 +14,9 @@ Goals:
 
 ```{r}
 
+library(tidyverse)
+library(ggplot2)
+
 seine_long <- 
   read_rds("~/Documents/projects/ds4eeb/Pete_local_data/seine_long.rds")
 
@@ -24,6 +27,8 @@ seine <-
   read_rds("~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
 
 ```
+
+### fall salmon data
 
 ```{r}
 fall_salmon <- 
@@ -60,4 +65,118 @@ temp %>%
   theme_bw()
 
 # consider: calc monthly mean temperature and overlay this on the salmon totals
+# accumulation curves
+```
+
+# analyses
+
+The challenges of nailing the location information, plus mapping it effectively feel a bit much, given our deadlines.
+
+I want to focus on analyses. Thinking that I'll generate Delta-wide accumulation curves for chinook, and look at the timing for 10%, 50% and 90% events as a function of Delta outflow. Because those events should be normally distributed, the stats should be straightforward (no weird distributions). If Delta outflow numbers prove hard to get, we could work with categorical water year type, sensu DWR. One good thing about water year type is that they directly reflect water usage, so we're looking at the possible effects of human action as well as environmental variability.
+
+## accumulation curves
+
+```{r}
+
+# select Chinook counts (no need for 'no catch'), begining with WY 1976 (Oct 1 1976 - Sep 30 1977) and ending with WY 2024 (Oct 1 2024 - end of data set (July 31, close enough to the proper end of the WY for our purposes))
+
+chisal <-
+  seine_long_min_effort %>% 
+  filter(common_name == "Chinook Salmon" & date >= "1976-10-01")
+  
+# add water year, including wy_day
+library(dataRetrieval)
+library(EflowStats)
+
+chisal <-
+  chisal %>% 
+  mutate(
+    # water year
+    wy = calcWaterYear(date),
+    # day of water year (wd), wyMonth=10L bc water year begins Oct 1
+    wd = get_waterYearDay(date, wyMonth = 10L)) %>% 
+  # reorg & select columns
+  relocate(wy:wd, .after = date) %>% 
+  select(c(location:water_temp, fork_length, race_by_length, count))
+
+# aggregate to daily totals bc freq >1 seine per day
+daily <- 
+  chisal %>%
+  group_by(wy, wd) %>%
+  summarise(
+    daily_total = sum(count, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# calc cumulative percentage for each wy
+daily_cum <- 
+  daily %>%
+  group_by(wy) %>%
+  arrange(wd) %>%
+  mutate(
+    annual_total = sum(daily_total),
+    cum_total = cumsum(daily_total),
+    cum_percent = 100 * cum_total / annual_total
+  ) %>% 
+  ungroup() %>% 
+  arrange(wy, wd)
+
+# plot accumulation curves
+ggplot(daily_cum,
+       aes(x = wd,
+           y = cum_percent,
+           group = wy)) +
+  geom_line(alpha = 0.3) +
+  labs(x = "Day of Water Year",
+       y = "Cumulative % of Annual Total",
+       title = "Water Year Chinook Accumulation Curves") +
+  theme_bw()
+
+# color by year
+ggplot(daily_cum,
+       aes(x = wd,
+           y = cum_percent,
+           group = wy,
+           color = factor(wy))) +
+  geom_line() +
+  labs(x = "Day of Water Year",
+       y = "Cumulative % of Annual Total",
+       title = "Water Year Chinook Accumulation Curves") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+# outlier is 1977 (see below too)
+```
+
+The outlier, with 50% accumulate about wd 235, is 1977. Because it's the first year of the time series, I think we're justified dropping this from the analyses at least (or if) until we're able to learn more about sampling that year
+
+## identify thresholds
+
+```{r}
+# day of water year when the 10%, 50% and 90% of total annual numbers are reached
+thresholds <- c(10, 50, 90)
+
+percentile_days <- 
+  daily_cum %>%
+  group_by(wy) %>%
+  summarise(
+    day_10 = min(wd[cum_percent >= 10]),
+    day_50 = min(wd[cum_percent >= 50]),
+    day_90 = min(wd[cum_percent >= 90]),
+    .groups = "drop"
+  )
+
+percentile_days
+write_csv(percentile_days, "~/Documents/projects/ds4eeb/final_project/data/percentile_days.csv")
+```
+
+Say something here
+
+```{r}
+ggplot(daily_cum,
+       aes(wd, cum_percent, group = wy)) +
+  geom_line(alpha = 0.3) +
+  geom_hline(yintercept = c(10, 50, 90),
+             linetype = "dashed") +
+  theme_bw()
 ```

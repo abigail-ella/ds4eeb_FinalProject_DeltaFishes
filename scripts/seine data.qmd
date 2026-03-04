@@ -1503,6 +1503,9 @@ selected_sites <-
   # location is NOT unique; retained in case helps with orientation
   clean_names()
 
+# save data file to local drive
+# write_rds(selected_sites, "~/Documents/projects/ds4eeb/Pete_local_data/selected_sites.rds")
+
 # select data from those minimum effort sites
 seine_long_min_effort <-
   seine_long %>% 

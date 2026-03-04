@@ -17,7 +17,47 @@ Goals:
 seine_long <- 
   read_rds("~/Documents/projects/ds4eeb/Pete_local_data/seine_long.rds")
 
+seine_long_min_effort <-
+  read_rds("~/Documents/projects/ds4eeb/Pete_local_data/seine_long_min_effort.rds")
+
 seine <- 
   read_rds("~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
 
+```
+
+```{r}
+fall_salmon <- 
+  seine_long_min_effort %>% 
+  mutate(year = year(date), month = month(date)) %>% 
+  relocate(year:month, .before = date) %>% 
+  filter(common_name == "Chinook Salmon" | common_name == "No catch") %>% 
+  # months chose to correspond to FMWT
+  filter(month >= 9 & month <= 12)
+
+temp <-
+  fall_salmon %>% 
+  group_by(region_code, year) %>% 
+  summarise(total = sum(count, na.rm = TRUE))
+
+temp %>% 
+  ggplot(aes(x = region_code, y = total)) +
+  geom_point() +
+  theme_bw()
+
+temp <-
+  fall_salmon %>% 
+  group_by(station_code, year) %>% 
+  summarise(total = sum(count, na.rm = TRUE))
+
+temp %>% 
+  ggplot(aes(x = station_code, y = total)) +
+  geom_point() +
+  theme_bw()
+
+temp %>% 
+  ggplot(aes(x = year, y = total)) +
+  geom_point() +
+  theme_bw()
+
+# consider: calc monthly mean temperature and overlay this on the salmon totals
 ```

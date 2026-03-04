@@ -1532,7 +1532,6 @@ seine <-
 # note that these data are a subset of the original data! retains data only from those sites where effort met the arbitrarily determined minimum
 
 write_rds(seine, "~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
-write_rds(seine, "~/Documents/projects/ds4eeb/final_project/data/seine.rds")
 
 ```
 

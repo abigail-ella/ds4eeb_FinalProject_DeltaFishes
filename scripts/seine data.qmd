@@ -1458,7 +1458,8 @@ seine_long <-
   # exclude fishes not identified to species
   filter(!grepl("unknown", common_name))
 
-write_rds(seine_long, "~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
+# save data file to local drive
+# write_rds(seine_long, "~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
 
 # calc the number of seine hauls at each site for each year
 effort <-
@@ -1531,7 +1532,8 @@ seine <-
 
 # note that these data are a subset of the original data! retains data only from those sites where effort met the arbitrarily determined minimum
 
-write_rds(seine, "~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
+# stash data file to local folder
+# write_rds(seine, "~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
 
 ```
 

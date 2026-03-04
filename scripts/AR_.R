@@ -164,3 +164,57 @@ print(head(p_2))
 # remove helper columns
 p_2[c("genus_code", "genus_name")]<-list(NULL)
 print(p_2)
+
+# get a month and year column separate
+
+library(lubridate)
+
+p_2 <- p_2 %>%
+  mutate(
+    SampleDate = mdy(SampleDate),   # convert to Date (month/day/year)
+    month = month(SampleDate),
+    year = year(SampleDate))
+view(p_2)
+print(p_2)
+
+# Get NonNative column
+p_2 <- p_2 %>%
+  #join by IEPFishCode
+  left_join(
+    dt4 %>%select(IEPFishCode, NonNative),
+    by = "IEPFishCode",
+    relationship = "many-to-many" # added this to silence the many to many relationship between x and y
+  ) %>% 
+  rename(non_native_code= NonNative) %>% 
+  #join by CommonName
+  left_join(
+    dt4 %>% select(CommonName, NonNative),
+    by="CommonName",
+    relationship = "many-to-many"
+  ) %>% 
+  rename(non_native_name = NonNative) %>% 
+  # makes a new column using information from the two columns just created
+  mutate(NonNative= coalesce(non_native_code,non_native_name))
+# remove helper columns
+p_2[c("non_native_name", "non_native_code")]<-list(NULL)
+
+# Adding Latitude using the station code refrence
+
+p_2 <- p_2 %>%
+  #join by Station code
+  left_join(
+    dt5 %>%select(StationCode, Latitude),
+    by = "StationCode",
+    relationship = "many-to-many" # added this to silence the many to many relationship between x and y
+  )
+# Adding Longitude using the station code refrence
+
+p_2 <- p_2 %>%
+  #join by Station code
+  left_join(
+    dt5 %>%select(StationCode, Longitude),
+    by = "StationCode",
+    relationship = "many-to-many" # added this to silence the many to many relationship between x and y
+  )
+
+  

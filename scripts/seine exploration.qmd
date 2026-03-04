@@ -1,0 +1,23 @@
+---
+title: "exploring seine data"
+author: "Pete Nelson"
+format: pdf
+editor: visual
+---
+
+# beach seine data
+
+Goals:
+
+-   select appropriate stations (drop those sampled infrequently or outside area of interest)
+-   add station location
+
+```{r}
+
+seine_long <- 
+  read_rds("~/Documents/projects/ds4eeb/Pete_local_data/seine_long.rds")
+
+seine <- 
+  read_rds("~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
+
+```

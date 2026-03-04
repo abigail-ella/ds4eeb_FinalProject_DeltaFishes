@@ -1366,14 +1366,6 @@ str(dt3) # SampleDate, SampleTime as chr
 ## location data ----
 head(dt5) # lat lon data for Location & StationCode
 
-# select variables, levels, ranges, etc -----
-summary(seine_all_var)
-
-# filter by:
-# circum that may compromise data qual? (time, gear_condition, weather_code, 
-# site_disturbance, alternate_site, [seine] volume, special_study)
-
-# do, turbidity, specific_conductance (outliers?)
 ```
 
 Pull out the beach seine data.
@@ -1388,6 +1380,7 @@ Pull out the beach seine data.
     distinct(IEPFishCode) %>% 
     drop_na())
 
+# This is a complete pull of the beach seine data except that includes fishes only, no invertebrates. Can be considered--until the DJFMP EDI data are updated--a good source for the raw data.
 seine_all_var <-
   dt3 %>% 
   # select fishes only (includes empty hauls--seines w no fishes of any spp)
@@ -1400,6 +1393,16 @@ seine_all_var <-
          .keep = "unused") %>% 
   # reorder columns
   relocate(date:time, .before = method_code)
+
+# select variables, levels, ranges, etc -----
+summary(seine_all_var)
+
+# filter by:
+# circum that may compromise data qual? (time, gear_condition, weather_code, 
+# site_disturbance, alternate_site, [seine] volume, special_study)
+
+# do, turbidity, specific_conductance (outliers?)
+
 ```
 
 ### data QAQC
@@ -1436,31 +1439,101 @@ Looking at the seine volume data, I have little confidence that these values wer
 
 ### data reduction
 
-The goal here is to develop a beach seine data set using a reduced set of variables (not all are germane to this study), pivot to wide format and add station location (latitude and longitude. This should be the dataframe that we'll use for analyses.
+The goal here is to develop a beach seine data set using a reduced set of variables (not all are germane to this study), and pivot to wide format.
+
+-   select variables
+
+-   determine effort (number of seine hauls per site per year)
+
+-   select sites
+
+-   pivot to wide format
 
 ```{r}
 # reduced variable number & remove fish NOT identified to species
 seine_long <- 
   seine_all_var %>% 
+  # select desired columns
   select(c(location:date, water_temp, turbidity_fnu:specific_conductance, iep_fish_code:common_name, fork_length, race_by_length, race_by_tag, count)) %>% 
+  # exclude fishes not identified to species
   filter(!grepl("unknown", common_name))
 
 write_rds(seine_long, "~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
 
-# wide format
-seine <-
+# calc the number of seine hauls at each site for each year
+effort <-
   seine_long %>% 
-  pivot_wider(id_cols = location:iep_fish_code, 
-              names_from = common_name, 
+  group_by(location, region_code, station_code, year = year(date)) %>% 
+  summarise(seine_hauls = n_distinct(station_code, date)) %>% 
+  print()
+
+# calc the mean number of hauls at each site
+mean_effort <-
+  seine_long %>% 
+  group_by(location, region_code, station_code, year = year(date)) %>% 
+  summarise(seine_hauls = n_distinct(station_code, date)) %>% 
+  group_by(location, region_code, station_code) %>% 
+  summarise(mean = mean(seine_hauls)) %>% 
+  print()
+```
+
+### site selection
+
+There are two factors to consider when selecting beach seine sites–which sites give us decent coverage in all salmon-relevant parts of the Delta, and which sites were sampled with sufficient consistency to ensure they provide a decent representation of the nearshore fish community.
+
+Looking at mean effort, the average number of seine hauls performed at each site each year, I'm going to arbitrarily select only those sites whose mean equaled or exceeded 18, and hope that we'll get decent spatial coverage for the Delta.
+
+```{r}
+
+# form a df of sites matching that minimum effort (retains the station_code for each)
+selected_sites <-
+  mean_effort %>% 
+  filter(mean >= 18) %>% 
+  left_join(dt5, 
+            join_by(station_code == StationCode),
+            # only keys (sites) from mean_effort are retained
+            keep = FALSE,
+            # drop unmatched dt5 rows
+            unmatched = "drop",
+            # expects each row in mean_effort matches at most 1 row in dt5
+            relationship = "many-to-one") %>% 
+  select(-c(MethodCode, Location)) %>% 
+  relocate(Latitude:Longitude, .after = region_code) %>% 
+  # location is NOT unique; retained in case helps with orientation
+  clean_names()
+
+# select data from those minimum effort sites
+seine_long_min_effort <-
+  seine_long %>% 
+  filter(station_code %in% selected_sites$station_code)
+
+
+```
+
+### prep for analyses
+
+Convert data from long format to wide, where each row is a sample unit, a single unique haul from a given location on a given date. Site location data (latitude, longitude) are in selected_sites.
+
+```{r}
+# wide format
+
+seine <-
+  seine_long_min_effort %>% 
+  pivot_wider(id_cols = c(station_code:specific_conductance),
+              names_from = common_name,
+              names_sort = TRUE,
               values_from = count,
               values_fn = sum,
               values_fill = 0) %>% 
-  select(-c(iep_fish_code, 'No catch')) %>% 
-  clean_names()
+  clean_names() %>% 
+  arrange(station_code, date) %>% 
+  print()
 
-head(seine)
+# note that these data are a subset of the original data! retains data only from those sites where effort met the arbitrarily determined minimum
 
 write_rds(seine, "~/Documents/projects/ds4eeb/Pete_local_data/seine.rds")
+write_rds(seine, "~/Documents/projects/ds4eeb/final_project/data/seine.rds")
+
 ```
 
 ## Field Methods

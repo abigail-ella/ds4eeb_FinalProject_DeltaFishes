@@ -4,7 +4,7 @@ library(janitor)
 library(chron)
 library(gridExtra)
 library(dataRetrieval)
-remotes::install_github("doi-usgs/EflowStats@v5.2.0")
+# remotes::install_github("doi-usgs/EflowStats@v5.2.0")
 library(EflowStats)
 
 # get data ------
@@ -1095,3 +1095,4 @@ percentile_days <-
     day_90 = min(wd[cum_percent >= 90]),
     .groups = "drop"
   )
+

@@ -968,13 +968,13 @@ selected_sites <-
   clean_names()
 
 # select data from those minimum effort sites
-temp <-
+seine <-
   temp %>% 
   filter(station_code %in% selected_sites$station_code)
 
 ## pivot wide ----
-seine <-
-  temp %>% 
+seine_wide <-
+  seine %>% 
   pivot_wider(id_cols = c(station_code:specific_conductance),
               names_from = common_name,
               names_sort = TRUE,
@@ -989,7 +989,7 @@ seine <-
 # quick look at salmon captured September through December
 
 fall_salmon <- 
-  temp %>% 
+  seine %>% 
   mutate(year = year(date), month = month(date)) %>% 
   relocate(year:month, .before = date) %>% 
   filter(common_name == "Chinook Salmon" | common_name == "No catch") %>% 
@@ -1023,7 +1023,7 @@ salmon_by_year %>%
 # data set (July 31, close enough to the proper end of the WY for our purposes))
 
 chisal <-
-  temp %>% 
+  seine %>% 
   # select only chinook and (mostly) complete water years
   filter(common_name == "Chinook Salmon" & 
            date >= "1976-10-01") %>% 
@@ -1062,15 +1062,6 @@ daily_cum <-
   arrange(wy, wd)
 
 ### plot accumulation curves -----
-ggplot(daily_cum,
-       aes(x = wd,
-           y = cum_percent,
-           group = wy)) +
-  geom_line(alpha = 0.3) +
-  labs(x = "Day of Water Year",
-       y = "Cumulative % of Annual Total",
-       title = "Water Year Chinook Accumulation Curves") +
-  theme_bw()
 
 # color by year
 # outlier is 1977
@@ -1080,6 +1071,8 @@ ggplot(daily_cum,
            group = wy,
            color = factor(wy))) +
   geom_line() +
+  geom_hline(yintercept = c(10, 50, 90),
+             linetype = "dashed") +
   labs(x = "Day of Water Year",
        y = "Cumulative % of Annual Total",
        title = "Water Year Chinook Accumulation Curves") +

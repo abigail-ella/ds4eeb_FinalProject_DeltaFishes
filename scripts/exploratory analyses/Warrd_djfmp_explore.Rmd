@@ -279,6 +279,9 @@ decade_water_temp <- combo_trawl %>%
 ggplot(decade_water_temp, aes(DOY, mean_temp, color = factor(decade))) +
   geom_line(size = 0.7) +
   theme_minimal()
+
+anova_decadaltemps1 <- aov(mean_temp ~ decade, data = decade_water_temp)
+summary(anova_decadaltemps1)
 ```
 
 
@@ -887,7 +890,7 @@ And then look at effects over time.
 ```{r}
 library(brms)
 m.flow <- brm(
-  Count ~ log(OUT + 1),
+  Count ~ log(OUT + 1) + (1 | SampleDate),
   family = negbinomial(),
   data = salmonid_trawl,
   chains = 4, cores = 4, iter = 4000,
@@ -896,7 +899,7 @@ m.flow <- brm(
 ```
 
 ```{r}
-summary()
+summary(m.flow)
 ```
 
 

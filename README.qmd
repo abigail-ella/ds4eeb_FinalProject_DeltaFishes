@@ -10,20 +10,17 @@ output-file: README.md
 
 #### Title: Sacramento–San Joaquin Delta Environmental and Fish Community Analysis
 
-This final project within the BIOE 276 Data Science for EEB course attempts to analyzes long term changes in temperature and salinity within the Sacramento–San Joaquin Delta and assesses how those environmental changes have contributed to overall changes in fish community assemblages. Using data from the Delta Juvenile Fish Monitoring Program Environmental Data Initiative (EDI), we explore these specific environmental trends over time and associations with fish species composition.
+This final project within the BIOE 276 Data Science for EEB course attempts to analyzes long term changes in temperature and flow within the Sacramento–San Joaquin Delta and assesses how those environmental changes have contributed to overall changes in salmonid abundance. Using data from the Delta Juvenile Fish Monitoring Program Environmental Data Initiative (EDI) and the California Department of Water Resources Dayflow data collection program, we explore these specific environmental trends over time and associations with fish species adundances.
 
 #### Research Questions/ Objectives
 
-Our project is looking to understand the long term changes to important environmental variables within the Sacramento–San Joaquin Delta. We want to understand the impacts of these shifts on fish community assemblages over time. Possible objectives include:
+Our project is looking to understand the long term changes to important water quality variables within the Sacramento–San Joaquin Delta. We want to understand the impacts of these shifts on juvenile salmonid populations over time. Objectives include:
 
--   Analyze shifts in temperature and salinity over time
--   Assess changes in species composition, abundance, and distribution
--   Look at correlations between patterns of fish communities and environmental condition changes to understand potential ecological responses
+-   Analyze shifts in temperature and flow over time
+-   Assess changes in salmonid species composition, abundance, and distribution
+-   Look at correlations between patterns of salmonid abundance and environmental condition changes to understand potential ecological responses
 -   Compare the seasonal composition of fish communities in discrete parts of the Delta
--   Quantify the environmental predictability associated with water temperature, salinity, turbidity and flow from discrete parts of the Delta
--   Map year-to-year changes in environmental conditions across the Delta
--   Track phenology of salmonid outmigration over time and during different water year types (for example, how does juvenile salmon transit time between Delta entry at Sacramento and Mossdale and Delta exit at Chipps Island vary from one year to the next?) *Prediction: Delta passage times will be slowest during water years characterized by intermediate flow (or precipitation) rates and faster under conditions of high flow (early departure from natal streams and travel facilitated by current speed) and under conditions of low flow (some juveniles delay outmigration due to slower growth rates coupled with reduced travel rates associated with slower current speeds).* This is going to be complicated by multiple run-types having differing run timing.
--   Is Silverside (*Menidia audens*) abundance correlated with environmental predictability? Is a short-lived fish subject to a variable that is defined over decades? What about a long-lived species?
+-   Track phenology of salmonid outmigration over time and during different water year types
 
 #### Background Information
 
@@ -33,27 +30,31 @@ ADD MORE HERE about the background information of both DJFMP and how this data i
 
 #### Target Audience
 
-Our immediate audience is comprised of our classmates and our professor for the UCSC ES4EEB course, but our hope is that we will find compelling patterns in our data and evidence for significant ecological processes. In that event, we plan to continue our data exploration and analyses with the goal of publishing a paper on our findings, perhaps in San Francisco Estuarine and Watershed Sciences.
+The audience of this data report is California state water resource managers and policy makers. This report is aimed to help
 
 ## Repository Summary
 
-#### Directory Structure
+#### Directory Structure- Table of Contents
 
 `/dds4eeb_FinalProject_DeltaFishes/`
 
-`├── data/ # Raw and processed data`
+`|--- data/ # Raw and processed data`
 
-`├── scripts/ # R scripts and markdown files`
+`|------ raw/ # Raw data directly from the DJFMP EDI Repository`
 
-`├── figures/ # Output plots and figures`
+`|------ processed/ # Data utilized throughout the workflow`
 
-`├── outputs/ # Results, tables, and exports`
+`|--- scripts/ # R scripts, Quarto files and markdown files`
 
-`├── docs/ # Documentation, notes, and resources`
+`|--- figures/ # Output plots and figures`
 
-`├──README.qmd/ #Project and workflow description file`
+`|--- outputs/ # Results, tables, and exports`
 
-`└── BIOE 176 dds4eeb_FinalProject_DeltaFishes.Rproj # RStudio project file`
+`|--- docs/ # Documents, documentation, notes, and resources`
+
+`|---README.qmd/ #Project and workflow description file`
+
+`---BIOE 176 dds4eeb_FinalProject_DeltaFishes.Rproj # RStudio project file`
 
 #### Data Sources
 
@@ -71,21 +72,30 @@ Run `data/raw/edi.244.14.r` to retrieve raw data from EDI repository.
 
 In `.gitignore` run `data/processed/*.csv` and commit this change as ignoring our processed data files. These files are too large and must only be stored locally.
 
-Then run `scripts/creatingdataframes.R` to regenerate these dataframes locally in R.
+Then run `scripts/creatingdataframes.R` to regenerate these data frames locally in R, renaming them to descriptive file names within the `processed/` directory folder.
 
-#### Workflow
+#### Packages Used
 
-##### Explore
+```{r}
+install.packages("renv")
+dependencies <- renv::dependencies(path = "./scripts/DeltaFishes.qmd")
+view(dependencies)
+
+```
+
+## Workflow
+
+#### Explore
 
 Initially, we expect to process our data, asking questions, and generating figures. Most of this will be done individually, albeit with mutual support for technical questions and some discussion regarding what we are seeing. There should be a good deal of data wrangling and cleaning at this stage, eliminating, too, what seems extraneous. Initial ideas about data analysis should begin to emerge. This is likely to be coupled with reading from the published literature, although the amount of time available probably is going to limit this.
 
 Our research questions are expected to "lead to a specific statistical analysis plan" (Popovic et al. 2024) for each. Consider adopting a risk-of-bias assessment tool (see Boyd et al. 2022) and registering (*sensu* Popovic et al. 2024) a description of our study with Malin (sort of an informal registration).
 
-##### Refine
+#### Refine
 
 Early discoveries should lead to the development of some testable hypotheses and increased discussion among team members. What seems interesting? Tractable? How might different questions and components fit together? We expect that this phase should include the identification of strategies for analysis, and writing code with the expectation that others are going to run and read that code. This phase is also going to demand that we articulate our questions and hypotheses more formally, now working more closely together. Effective communication is going to be even more important.
 
-##### Produce
+#### Produce
 
 At this point, with due dates closing in, we expect to execute our code, polishing our figures and developing slides for presenting our results to our classmates.
 

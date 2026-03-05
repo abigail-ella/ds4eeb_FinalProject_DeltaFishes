@@ -18,15 +18,17 @@ Water is an important and valuable resource throughout the state of California. 
 
 ### Salmonid Importance
 
-Pacific salmon and steelhead are among the most ecologically, economically, and culturally significant species connected to the Sacramento–San Joaquin River Delta. The California salmon industry is valued at \$1.4 billion, contributing to nearly 23,000 jobs annually. This economy depends on healthy runs of Chinook, coho, and steelhead utilizing these waterways. The Delta plays a vital role in the life cycle of these salmonids. Around two thirds of species of California's Pacific salmon pass through the Delta on their way upstream to spawn, while juveniles utilize the area as rearing habitat. This transitional zone provides an abundance of food, refuge and conditions for physiological adaptations as they prepare for the marine environment.
+Pacific salmon and steelhead are among the most ecologically, economically, and culturally significant species connected to the Sacramento–San Joaquin River Delta. The California salmon industry is valued at \$1.4 billion, contributing to nearly 23,000 jobs annually. This economy depends on healthy runs of Chinook, coho, and steelhead utilizing these waterways. The Delta plays a vital role in the life cycle of these salmonids. Around two thirds of species of California's adult Pacific salmon pass through the Delta on their way upstream to spawn, while juveniles utilize the area as rearing habitat. This transitional zone provides an abundance of food, refuge and ideal conditions for physiological adaptations as they prepare for the marine environment.
 
-However, salmonid populations face pressure from changes to flow regimes, water temperatures, habitat loss, and extreme weather events. Reduced snowpack, prolonged drought, and sudden flood events disrupt migration timing and spawning success. Effective Delta management must then balance water supply with environmental flow requirements, habitat restoration, and temperature control measures to sustain both salmon populations and the communities that depend on them.
+However, salmonid populations face pressure from changes to flow regimes, water temperatures, habitat loss, and extreme weather events. Reduced snow melt runoff, prolonged drought, and flood events have disrupted migration timing and reproductive success. Effective Delta management must then balance water supply with environmental needs, habitat restoration, and temperature control measures to sustain both salmon populations and the communities that depend on them.
 
-### Report Goals 
+### Report Objectives 
 
 This assessment aims to evaluate the current state of juvenile salmonid abundances in the Sacramento–San Joaquin River Delta and how these abundances have changed over time as an effect of ecological parameters linked to water management practices. This report focuses specifically on key species such as steelhead and Chinook salmon which rely on the Delta as critical migratory and rearing habitat.
 
 To conduct our analyses, we utilize long-term monitoring data from the Delta Juvenile Fish Monitoring Program (DJFMP). This dataset provides multi-decadal information on juvenile salmonid abundance, allowing for evaluation of temporal trends and potential relationships with flow, temperature, and other ecological parameters. Through this, the study seeks to better understand how water management strategies may influence salmonid population dynamics within the Delta and propose how water resource managers may better work in the Delta.
+
+### Results
 
 #### Salmonid Abundance
 
@@ -120,7 +122,7 @@ salmonid_trawl <- salmonid_trawl %>%
 
 ```{r}
 #| results: asis
-#| fig-cap: "Juvenile salmon abundance over time"
+#| fig-cap: "Figure 1. Juvenile salmon abundance over time"
 
 ggplot(
   salmonid_trawl %>%
@@ -243,6 +245,7 @@ salmonid_trawl <- salmonid_trawl %>%
 
 ```{r}
 #| results: asis
+#| fig-cap: "Figure 2. Mean annual flow by water year type"
 
 #annual flow for Delta
 annual_flow <- allflow %>%
@@ -270,6 +273,7 @@ ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
 
 ```{r}
 #| results: asis
+#| fig-cap: "Figure 3. Linear trend of annual flow"
 
 ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
   geom_line(alpha = 0.3) +           
@@ -281,10 +285,13 @@ ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
   theme_bw()
 ```
 
-Over the past several decades, we've seen increasingly drier conditions and a reduction in overall water availability. These conditions have severe consequences for juvenile salmonids who rely on freshwater flows through the Delta. This long-term monitoring has suggested that average flows through the Delta have trended downward over time. Even in years classified as "Above Normal", the amount of water flowing out of the Delta can remain relatively low due to upstream storage, diversions, and exports to Southern California, agriculture and the Bay area. This means that the ecological benefits of wetter years are not always fully realized within the Delta ecosystem or by the species within. Water management decisions during these times, then, become critical to sustaining populations and shaping the ecological conditions of the Delta.
+Over the past several decades, we've seen increasingly drier conditions and a reduction in overall water availability. These conditions have severe consequences for juvenile salmonids who rely on freshwater flows through the Delta. This long-term monitoring has suggested that average flows through the Delta have trended downward over time (Fig.3). We also have see drier conditions in the Sacramento River System as a whole, with an increase in "Dry" and "Critical" years since 2000 (Fig. 2).
+
+However, even in years classified as "Above Normal", the amount of water flowing out of the Delta can remain relatively low due to upstream storage, diversions, and exports to Southern California, agriculture and the Bay area (Fig. 2). This means that the ecological benefits of wetter years are not always fully realized within the Delta ecosystem or by the species within. Water management decisions during these times, then, become critical to sustaining populations and shaping the ecological conditions of the Delta.
 
 ```{r}
 #| results: asis
+#| fig-cap: "Figure 4. Daily salmonid abundance as a function of flow"
 
 ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
   geom_point()  +
@@ -297,7 +304,7 @@ ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
 
 ```
 
-Discuss here about how daily flows and water years effect abundance
+Discuss here about how daily flows and water years effect abundance, discuss the model, etc...
 
 ```{r}
 #Model looking at the effects of flow on daily salmon abundance 
@@ -318,25 +325,50 @@ summary(m.flow)
 
 ```{r}
 #| results: asis
+#| fig-cap: "Figure 5. Mean water temperature by year"
 
 #Calculaating annual water temp 
-annual_water_tempsalmo <- salmonid_trawl %>%
+annual_water_temp <- combo_trawl %>%
   group_by(year) %>%
   summarise(
     mean_temp = mean(WaterTemp, na.rm = TRUE)
   )
 
-ggplot(annual_water_tempsalmo, aes(x = year, y = mean_temp)) +
+ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
   geom_line(color = "firebrick", size = 1) +
   geom_smooth(method = "lm", se = TRUE, color = "black") +
   geom_point(color = "firebrick") +
-  theme_minimal()
+  labs(
+    x = "Year",
+    y = "Mean Water Temperature"
+  ) +
+  theme_bw()
 ```
 
-Something about an overall downward trend in water temp... due to water policy changes
+From these long-term water temperature records, there seems to be a downward trend in overall temperature within the Delta. However, management actions through the State Water Resources Control Board (95-1WR, May 1995) defined actions and implemented policy changes to "minimize losses of salmon and steelhead due to flow fluctuation." This led to an influx of cold water into the Delta, coinciding with several wet water years in a row. These actions led to a decrease in overall temperature of the Delta compared to previously warmer conditions.
 
 ```{r}
 #| results: asis
+#| fig-cap: "Figure 6. Mean water temperature by year, 1995-2025"
+
+annual_water_temp %>% 
+  filter(year > 1995) %>% 
+  ggplot(aes(x = year, y = mean_temp)) +
+  geom_line(color = "firebrick", size = 1) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  geom_point(color = "firebrick") +
+  labs(
+    x = "Year",
+    y = "Mean Water Temperature"
+  ) +
+  theme_bw()
+```
+
+Now, however, we are beginning to trend back upward to warming temperatures. Recent years have seen particularly high peaks in mean Delta water temperatures, reaching above 18 degrees Celcius.
+
+```{r}
+#| results: asis
+#| fig-cap: "Figure 7. Delta mean monthly water temperature"
 
 ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
   geom_boxplot(fill = "skyblue", alpha = 0.7) +
@@ -344,13 +376,14 @@ ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
     x = "Month",
     y = "Water Temperature"
   ) +
-  theme_minimal()
+  theme_bw()
 ```
 
 The Delta exhibits strong seasonal variability in water temperature, driven by changes in air temperature, inflows, and hydrologic conditions throughout the year. During winter and early spring, temperatures tend to remain relatively cool as snowmelt and increased river flows enter the system. However, as summer progresses and flows decrease, water temperatures rise substantially across the Delta. This is incredibly important when considering juvenile fish migrations and the
 
 ```{r}
 #| results: asis
+#| fig-cap: "Figure 8. Water temperature (C) effects on juvenile salmon abundance"
 
 ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
   geom_point(alpha = 0.8) + 
@@ -363,3 +396,38 @@ ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
 ```
 
 Something about optimal water temp for juveniles and the effects of water temp even in dry years can lead to high abundance
+
+```{r}
+#| results: asis
+#| fig-cap: "Figure 9. Decadal shifts in Delta water temperature"
+
+#Get DOY for mapping
+combo_trawl <- combo_trawl %>%
+   mutate(DOY = yday(SampleDate))
+
+#avg temp per day since multiple sampling per day
+daily_water_temp <- combo_trawl %>%
+  group_by(year, DOY) %>%
+  summarise(
+    mean_temp = mean(WaterTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+#Plot
+ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
+  geom_line(color = "gray70", alpha = 0.5) +
+  geom_line(
+    data = subset(daily_water_temp, year >= 2020),
+    aes(color = factor(year)),
+    size = 1
+  ) +
+  theme_minimal()
+```
+
+Discuss decadal shifts over time– do an analysis to see if decades are sig different from each other.
+
+#### Phenological Shifts (Peter?)
+
+### Discussion and Suggested Action
+
+How can these results be used in management decisions and policy changes...

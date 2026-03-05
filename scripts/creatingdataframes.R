@@ -2,7 +2,7 @@
 dfs <- list(
   trawl_76_01 = dt1,
   trawl_02_25 = dt2,
-  #seine_76_25 = dt3, #not really going to use this one
+  seine_76_25 = dt3, 
   taxonomy  = dt4,
   sample_sites = dt5
 )

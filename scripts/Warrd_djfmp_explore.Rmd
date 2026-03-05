@@ -890,10 +890,14 @@ m.flow <- brm(
   Count ~ log(OUT + 1),
   family = negbinomial(),
   data = salmonid_trawl,
-  chains = 4, cores = 4, iter = 4000
+  chains = 4, cores = 4, iter = 4000,
+  algorithm = 'fullrank'
 )
 ```
 
+```{r}
+summary()
+```
 
 
 Ok this is taking forever to run

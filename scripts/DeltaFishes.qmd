@@ -1,0 +1,365 @@
+---
+title: "Long term water quality effects on juvenile salmon abundance in the Sacramento San-Joaquin River Delta"
+author: "Peter Nelson, Ambrosio Rivera, Abigail Ward, Walt Vance"
+format:
+ pdf: default
+editor: visual
+execute:
+  echo: false
+  warning: false
+  message: false
+  results: "hide"
+  dir: project
+---
+
+## State of Juvenile Salmon in the Delta Report
+
+Water is an important and valuable resource throughout the state of California. The Sacramento San-Joaquin River Delta is one of the most utilized water resources, providing water to nearly 27 million people across the state as well as supporting a \$1 billion/ year agricultural industry. Yet this area also contains a diversity of over 700 plant an animal species, many of which are important in recreational and community use. Understanding how to manage this resource in a way that both supports human endeavors and the vital ecosystem within this area is extremely important as we continue to face more extreme weather events.
+
+### Salmonid Importance
+
+Pacific salmon and steelhead are among the most ecologically, economically, and culturally significant species connected to the Sacramento–San Joaquin River Delta. The California salmon industry is valued at \$1.4 billion, contributing to nearly 23,000 jobs annually. This economy depends on healthy runs of Chinook, coho, and steelhead utilizing these waterways. The Delta plays a vital role in the life cycle of these salmonids. Around two thirds of species of California's Pacific salmon pass through the Delta on their way upstream to spawn, while juveniles utilize the area as rearing habitat. This transitional zone provides an abundance of food, refuge and conditions for physiological adaptations as they prepare for the marine environment.
+
+However, salmonid populations face pressure from changes to flow regimes, water temperatures, habitat loss, and extreme weather events. Reduced snowpack, prolonged drought, and sudden flood events disrupt migration timing and spawning success. Effective Delta management must then balance water supply with environmental flow requirements, habitat restoration, and temperature control measures to sustain both salmon populations and the communities that depend on them.
+
+### Report Goals 
+
+This assessment aims to evaluate the current state of juvenile salmonid abundances in the Sacramento–San Joaquin River Delta and how these abundances have changed over time as an effect of ecological parameters linked to water management practices. This report focuses specifically on key species such as steelhead and Chinook salmon which rely on the Delta as critical migratory and rearing habitat.
+
+To conduct our analyses, we utilize long-term monitoring data from the Delta Juvenile Fish Monitoring Program (DJFMP). This dataset provides multi-decadal information on juvenile salmonid abundance, allowing for evaluation of temporal trends and potential relationships with flow, temperature, and other ecological parameters. Through this, the study seeks to better understand how water management strategies may influence salmonid population dynamics within the Delta and propose how water resource managers may better work in the Delta.
+
+#### Salmonid Abundance
+
+```{r}
+#Load packages
+library(here)
+library(readr)
+library(tidyverse)
+library(readxl) 
+library(dplyr)
+library(janitor) 
+library (stringr)
+library(openxlsx)
+library(stats)
+library(car)
+library(ggplot2)
+library(ggpubr)
+library(lubridate)
+library(MASS)
+library(brms)
+```
+
+```{r}
+#Load in data 
+sample_sites <- read_csv(here("data", "processed", "sample_sites.csv"))
+taxonomy <- read_csv(here("data", "processed", "taxonomy.csv"))
+trawl_02_25 <- read_csv(here("data", "processed", "trawl_02_25.csv"))
+trawl_76_01 <- read_csv(here("data", "processed", "trawl_76_01.csv"))
+
+#Separate sample date into day, month year
+trawl_76_01 <- trawl_76_01 %>% 
+  separate(SampleDate, into = c('month', 'day', 'year'), sep = "/", remove = FALSE)
+
+trawl_02_25 <- trawl_02_25 %>% 
+  separate(SampleDate, into = c('month', 'day', 'year'), sep = "/", remove = FALSE)
+
+
+trawl_76_01 <- trawl_76_01 %>%
+  mutate(
+    month = factor(
+      month,
+      levels = 1:12,
+      labels = month.abb,
+      ordered = TRUE
+    )
+  )
+
+trawl_02_25 <- trawl_02_25 %>%
+  mutate(
+    month = factor(
+      month,
+      levels = 1:12,
+      labels = month.abb,
+      ordered = TRUE
+    )
+  )
+
+#Create combination of datasets
+combo_trawl <- bind_rows(trawl_76_01, trawl_02_25)
+combo_trawl$year <- as.numeric(combo_trawl$year)
+
+#Create season column
+combo_trawl <- combo_trawl %>%
+  mutate(
+    season = case_when(
+      month %in% c("Dec", "Jan", "Feb") ~ "Winter",
+      month %in% c("Mar", "Apr", "May") ~ "Spring",
+      month %in% c("Jun", "Jul", "Aug") ~ "Summer",
+      month %in% c("Sep", "Oct", "Nov") ~ "Fall"
+    )
+  )
+
+#Salmonid only dataset
+#Filtering for salmonids and for specific sites  
+salmonid_trawl <- combo_trawl %>% 
+  filter(OrganismCode == "CHN" | OrganismCode == "RBT") 
+
+#Summming the counts per year to get abundances and getting runs 
+salmonid_trawl <- salmonid_trawl %>% 
+  mutate(
+    run = case_when(
+      OrganismCode == "RBT" ~ "steelhead",
+      !is.na(RaceByLength) ~ RaceByLength,
+      !is.na(RaceByTag) ~ RaceByTag,
+      TRUE ~ NA_character_
+    )
+  )
+
+
+```
+
+```{r}
+#| results: asis
+#| fig-cap: "Juvenile salmon abundance over time"
+
+ggplot(
+  salmonid_trawl %>%
+    group_by(year) %>%
+    summarise(annual_abundance = sum(Count, na.rm = TRUE),
+              .groups = "drop"),
+  aes(x = year,
+      y = annual_abundance)
+) +
+  geom_line(color = "black") +
+  geom_smooth(method = "lm")+
+  geom_point() +
+  labs(
+    x = "Year",
+    y = "Total Annual Salmonid Abundance",
+    title = "Annual Salmonid Abundance Over Time"
+  ) +
+  theme_bw()
+```
+
+```{r}
+#| results: asis
+
+#Add annual abundance of fish column
+salmonid_trawl <- salmonid_trawl %>%
+  group_by(year) %>%
+  mutate(annual_abundance = sum(Count, na.rm = TRUE)) %>%
+  ungroup()
+
+#Create annual abundace dataset
+annual_data <- salmonid_trawl %>%
+  group_by(year) %>%
+  summarise(
+    annual_abundance = sum(Count, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+#Perform a negative binomial glm to look at annual abundace over the years
+model_nb <- glm.nb(annual_abundance ~ year,
+                   data = annual_data)
+
+summary(model_nb)
+
+
+```
+
+```{r}
+exp(-0.01571)
+```
+
+```{r}
+100*(1-0.9844)
+```
+
+Overall, we've seen a 1.56% decline in juvenile salmon abundances since 1976. Although there have been specific peaks throughout time, this general trend in the Delta is extremely concerning as a downward trend in juvenile abundance can give insight into how changes to climate and habitat have had long term negative effects. Because juvenile survival strongly influences adult return rates, sustained declines at this life stage can translate into reduced numbers of spawning adults in subsequent years. This trend is vital to understand as we begin to explore how water management strategies can uplift and boost these populations.
+
+#### Flow Rate Trends and Effects
+
+```{r}
+#Load in flow data
+flow_70_83 <- read_csv(here("data", "processed", "dayflow-results-1970-1983.csv"))
+flow_84_96 <- read_csv(here("data", "processed", "dayflow-results-1984-1996.csv"))
+flow_97_23 <- read_csv(here("data", "processed", "dayflow-results-1997-2023.csv"))
+water_year <- read_xlsx(here("data", "processed", "cdec-water-year-type-jun-2025.xlsx"))
+
+#Filter Water Year Data
+water_year <- water_year %>%
+  rename(Year = WY) %>% 
+  filter(Area == "Sacramento Valley")
+
+#Combine Flow Data
+allflow <- bind_rows(flow_70_83, flow_84_96, flow_97_23)
+allflow <- allflow %>% 
+ rename(SampleDate = Date) 
+
+#Correct Flow Dates
+allflow <- allflow %>%
+  mutate(SampleDate = as.Date(SampleDate, format = "%m/%d/%Y"))
+
+
+#Get water year for all NAs
+allflow <- allflow %>%
+  left_join(
+    water_year %>% dplyr::select(Year, WYT),
+    by = "Year"
+  ) %>%
+  mutate(
+    Y = WYT  
+  ) %>%
+  dplyr::select(-WYT) 
+
+#Caluclate daily abundace 
+daily_salmonid_abundance <- salmonid_trawl %>%
+  group_by(SampleDate, CommonName, run) %>%
+  summarise(
+    total_fish = sum(Count, na.rm = TRUE),
+    .groups = "drop"
+  ) 
+
+
+#Merge abundances back in 
+salmonid_trawl <- salmonid_trawl %>%
+  left_join(daily_salmonid_abundance,
+            by = c("SampleDate", "CommonName", "run"))
+
+#Correct Flow Dates
+salmonid_trawl <- salmonid_trawl %>%
+  mutate(SampleDate = as.Date(SampleDate, format = "%m/%d/%Y"))
+
+
+#Merge with flow data
+salmonid_trawl <- salmonid_trawl %>%
+  left_join(
+    allflow %>% dplyr::select(SampleDate, OUT, Y, Year),
+    by = "SampleDate"
+  )
+
+ 
+```
+
+```{r}
+#| results: asis
+
+#annual flow for Delta
+annual_flow <- allflow %>%
+  group_by(Year, Y) %>%                               
+  summarise(
+    mean_OUT = mean(OUT, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
+  geom_col(alpha = 0.8) +
+  scale_fill_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
+  scale_x_continuous(
+    breaks = seq(min(annual_flow$Year),
+                 max(annual_flow$Year),
+                 by = 5)
+  ) +
+  labs(
+    x = "Year",
+    y = "Mean Annual Flow (cfs)"
+  ) +
+  theme_bw()
+
+```
+
+```{r}
+#| results: asis
+
+ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
+  geom_line(alpha = 0.3) +           
+  geom_smooth(method = "lm") + 
+  labs(
+    x = "Year",
+    y = "Mean Annual Flow (cfs)"
+  ) +
+  theme_bw()
+```
+
+Over the past several decades, we've seen increasingly drier conditions and a reduction in overall water availability. These conditions have severe consequences for juvenile salmonids who rely on freshwater flows through the Delta. This long-term monitoring has suggested that average flows through the Delta have trended downward over time. Even in years classified as "Above Normal", the amount of water flowing out of the Delta can remain relatively low due to upstream storage, diversions, and exports to Southern California, agriculture and the Bay area. This means that the ecological benefits of wetter years are not always fully realized within the Delta ecosystem or by the species within. Water management decisions during these times, then, become critical to sustaining populations and shaping the ecological conditions of the Delta.
+
+```{r}
+#| results: asis
+
+ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
+  geom_point()  +
+  scale_color_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
+  labs(
+    x = "Daily Flow (cfs)",
+    y = "Daily Abundance Count"
+  ) +
+  theme_bw()
+
+```
+
+Discuss here about how daily flows and water years effect abundance
+
+```{r}
+#Model looking at the effects of flow on daily salmon abundance 
+m.flow <- brm(
+  Count ~ log(OUT + 1),
+  family = negbinomial(),
+  data = salmonid_trawl,
+  chains = 4, cores = 4, iter = 4000,
+  algorithm = 'fullrank'
+)
+```
+
+```{r}
+summary(m.flow)
+```
+
+#### Temperature Trends and Effects 
+
+```{r}
+#| results: asis
+
+#Calculaating annual water temp 
+annual_water_tempsalmo <- salmonid_trawl %>%
+  group_by(year) %>%
+  summarise(
+    mean_temp = mean(WaterTemp, na.rm = TRUE)
+  )
+
+ggplot(annual_water_tempsalmo, aes(x = year, y = mean_temp)) +
+  geom_line(color = "firebrick", size = 1) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  geom_point(color = "firebrick") +
+  theme_minimal()
+```
+
+Something about an overall downward trend in water temp... due to water policy changes
+
+```{r}
+#| results: asis
+
+ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.7) +
+  labs(
+    x = "Month",
+    y = "Water Temperature"
+  ) +
+  theme_minimal()
+```
+
+The Delta exhibits strong seasonal variability in water temperature, driven by changes in air temperature, inflows, and hydrologic conditions throughout the year. During winter and early spring, temperatures tend to remain relatively cool as snowmelt and increased river flows enter the system. However, as summer progresses and flows decrease, water temperatures rise substantially across the Delta. This is incredibly important when considering juvenile fish migrations and the
+
+```{r}
+#| results: asis
+
+ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
+  geom_point(alpha = 0.8) + 
+  scale_color_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
+  labs(
+    x = "Water Temperature (C)",
+    y = "Daily Abundance Count"
+  ) +
+  theme_bw()
+```
+
+Something about optimal water temp for juveniles and the effects of water temp even in dry years can lead to high abundance

@@ -1,11 +1,20 @@
 #working with Peter tidy data
-
+install.packages("ggpubr")
 # install.packages("janitor")
-
+install.packages("car")
 # load libraries -----
 library(tidyverse)
 library(janitor)
 library(chron)
+library (stringr)
+library(janitor) 
+library (stringr)
+library(stats)
+library(car)
+library(ggplot2)
+library(ggpubr)
+### give him a dag
+## identify which beach sein sites that have been used the most consistently 
 
 # load and tidy data -----
 dt1 <- readRDS("C:/Delta raw data/dt1.rds")
@@ -14,6 +23,7 @@ dt3 <- readRDS("C:/Delta raw data/dt3.rds")
 dt4 <- readRDS("C:/Delta raw data/dt4.rds")
 dt5 <- readRDS("C:/Delta raw data/dt5.rds")
 
+head(dt1)
 # what do we have? -----
 ## trawl 78-01 ------
 (temp1 <- head(dt1)) # first half of data
@@ -50,6 +60,7 @@ dt4 %>% filter(Phylum == "Chordata") %>% select(CommonName, NonNative, Family, G
 range(dt3$SampleDate) # should start in 1976...
 levels(dt3$MethodCode) # yep, seine only
 str(dt3) # SampleDate, SampleTime as chr; 
+
 # consider filtering by factors:
 # GearConditionCode, WeatherCode, SiteDisturbance, AlternateSite, SpecialStudy
 # Gear...: 1=good sample, 2=fair, 3=poor, 9=fish gilled in trawl net, not caught properly;
@@ -160,6 +171,7 @@ left_join(
   mutate(genus= coalesce(genus_code,genus_name))
  
 head(p_2)
+
 print(head(p_2))
 # remove helper columns
 p_2[c("genus_code", "genus_name")]<-list(NULL)
@@ -217,4 +229,14 @@ p_2 <- p_2 %>%
     relationship = "many-to-many" # added this to silence the many to many relationship between x and y
   )
 
-  
+# filter out salmon
+
+wy_percent <- readxl::read_xlsx("cdec-water-year-type-jun-2025.xlsx")
+head(wy_percent)
+# I think I need to figure out which site is sacramento and which site is san joaquin
+head(percentile_days)
+# scratch that I just need to add a column that has water type and match it with year in percentile_days
+
+final_1 <- wy_percent %>%
+  left_join(percentile_days, by = c("WY" = "wy"))
+head(wy_percent)

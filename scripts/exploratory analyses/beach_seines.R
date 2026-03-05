@@ -4,8 +4,8 @@ library(janitor)
 library(chron)
 library(gridExtra)
 library(dataRetrieval)
+remotes::install_github("doi-usgs/EflowStats@v5.2.0")
 library(EflowStats)
-# remotes::install_github("doi-usgs/EflowStats@v5.2.0")
 
 # get data ------
 
@@ -930,7 +930,7 @@ rm(vol, temperature, turb, cond)
 temp <- 
   temp %>% 
   # select desired columns
-  select(c(location:date, water_temp, turbidity, specific_conductance, 
+  dplyr::select(c(location:date, water_temp, turbidity, specific_conductance, 
            iep_fish_code:common_name, fork_length, race_by_length, race_by_tag, 
            count)) %>% 
   # exclude fishes not identified to species
@@ -962,7 +962,7 @@ selected_sites <-
             unmatched = "drop",
             # expects each row in mean_effort matches at most 1 row in dt5
             relationship = "many-to-one") %>% 
-  select(-c(MethodCode, Location)) %>% 
+  dplyr::select(-c(MethodCode, Location)) %>% 
   relocate(Latitude:Longitude, .after = region_code) %>% 
   # location is NOT unique; retained in case helps with orientation
   clean_names()
@@ -1035,7 +1035,7 @@ chisal <-
     wd = get_waterYearDay(date, wyMonth = 10L)) %>% 
   # reorg & select columns
   relocate(wy:wd, .after = date) %>% 
-  select(c(location:water_temp, fork_length, race_by_length, count))
+  dplyr::select(c(location:water_temp, fork_length, race_by_length, count))
 
 ### daily counts -----
 # aggregate to daily totals bc freq >1 seine per day

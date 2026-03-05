@@ -10,6 +10,9 @@ execute:
   message: false
   results: "hide"
   dir: project
+  fig-align: center
+  fig-width: 8 
+  fig-height: 6
 ---
 
 ## State of Juvenile Salmon in the Delta Report
@@ -22,7 +25,7 @@ Pacific salmon and steelhead are among the most ecologically, economically, and 
 
 However, salmonid populations face pressure from changes to flow regimes, water temperatures, habitat loss, and extreme weather events. Reduced snow melt runoff, prolonged drought, and flood events have disrupted migration timing and reproductive success. Effective Delta management must then balance water supply with environmental needs, habitat restoration, and temperature control measures to sustain both salmon populations and the communities that depend on them.
 
-### Report Objectives 
+### Report Objectives
 
 This assessment aims to evaluate the current state of juvenile salmonid abundances in the Sacramento–San Joaquin River Delta and how these abundances have changed over time as an effect of ecological parameters linked to water management practices. This report focuses specifically on key species such as steelhead and Chinook salmon which rely on the Delta as critical migratory and rearing habitat.
 
@@ -49,6 +52,11 @@ library(ggpubr)
 library(lubridate)
 library(MASS)
 library(brms)
+library(chron)
+library(gridExtra)
+library(dataRetrieval)
+remotes::install_github("doi-usgs/EflowStats@v5.2.0")
+library(EflowStats)
 ```
 
 ```{r}
@@ -169,10 +177,12 @@ summary(model_nb)
 ```
 
 ```{r}
+#| include: false
 exp(-0.01571)
 ```
 
 ```{r}
+#| include: false
 100*(1-0.9844)
 ```
 
@@ -300,8 +310,6 @@ ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
 
 ```
 
-Discuss here about how daily flows and water years effect abundance, discuss the model, etc...
-
 ```{r}
 #| include: false
 
@@ -319,7 +327,9 @@ m.flow <- brm(
 summary(m.flow)
 ```
 
-#### Temperature Trends and Effects 
+Discuss here about how daily flows and water years effect abundance, discuss the model, etc...
+
+#### Temperature Trends and Effects
 
 ```{r}
 #| results: asis
@@ -396,7 +406,6 @@ ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
 Something about optimal water temp for juveniles and the effects of water temp even in dry years can lead to high abundance
 
 ```{r}
-#| results: asis
 #| fig-cap: "Decadal shifts in Delta water temperature"
 
 #Changing the sample date column to recognize as date
@@ -423,11 +432,176 @@ ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
     size = 1
   ) +
   theme_minimal()
+
+ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
+  geom_line(aes(color = year, linewidth = year, alpha = year)) +
+  scale_color_viridis_c(option = "mako", direction = -1) +
+  scale_linewidth(range = c(0.2, 1), guide = "none") +
+  scale_alpha(range = c(1, 0.8), guide = "none") +
+  theme_minimal()
+
+ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
+  geom_smooth(aes(color = year),
+              method = "loess", se = FALSE, span = 0.25) +
+  scale_color_viridis_c(option = "rocket", direction = 1) +
+  #scale_linewidth(range = c(0.3, 1.4), guide = "none") +
+  #scale_alpha(range = c(0.3, 1), guide = "none") +
+  theme_minimal()
 ```
 
 Discuss decadal shifts over time– do an analysis to see if decades are sig different from each other.
 
-#### Phenological Shifts (Peter?)
+#### Phenological Shifts 
+
+```{r}
+#| fig-cap: "Shifts in juvenile outmigration time "
+
+#Load in Data
+beachsieneALL <- read_csv(here("data", "processed", "seine_76_25.csv"))
+
+#Preparing Data for Plot
+
+## fish codes ----
+# pull all IEP fish codes out to help with filtering 
+# for fish data only (ie no inverts)
+fish_codes <- 
+    taxonomy %>% 
+    filter(Phylum == "Chordata",
+           # remove records where Species is NA
+           # but retains eg "Bass unidentified"
+           Species != "<NA>") %>%
+    distinct(IEPFishCode)
+
+# tidy data ----
+temp <-
+  beachsieneALL %>% 
+  # select fishes only (includes empty hauls--seines w no fishes of any spp)
+  filter(IEPFishCode %in% fish_codes$IEPFishCode) %>% 
+  # provide columns w good names
+  clean_names() %>% 
+  # fix date & time variables, originally as chr
+  mutate(date = mdy(sample_date), 
+         time = times(sample_time), 
+         .keep = "unused") %>% 
+  # reorder columns
+  relocate(date:time, .before = method_code)
+
+## site selection -----
+### effort -----
+# calc the mean number of hauls at each site
+# arbitrarily select only those sites whose mean equaled or exceeded 18
+
+mean_effort <-
+  temp %>% 
+  group_by(location, region_code, station_code, year = year(date)) %>% 
+  summarise(seine_hauls = n_distinct(station_code, date)) %>% 
+  group_by(location, region_code, station_code) %>% 
+  summarise(mean = mean(seine_hauls))
+
+### reduce ----
+# identify sites to be retained
+selected_sites <-
+  mean_effort %>% 
+  filter(mean >= 18) %>% 
+  left_join(sample_sites, 
+            join_by(station_code == StationCode),
+            # only keys (sites) from mean_effort are retained
+            keep = FALSE,
+            # drop unmatched dt5 rows
+            unmatched = "drop",
+            # expects each row in mean_effort matches at most 1 row in dt5
+            relationship = "many-to-one") %>% 
+  dplyr::select(-c(MethodCode, Location)) %>% 
+  relocate(Latitude:Longitude, .after = region_code) %>% 
+  # location is NOT unique; retained in case helps with orientation
+  clean_names()
+
+# select data from those minimum effort sites
+seine <-
+  temp %>% 
+  filter(station_code %in% selected_sites$station_code)
+
+## wy chinook -----
+# add water year and day of water year
+# select Chinook counts (no need for 'no catch'), begining with WY 1976 
+# (Oct 1 1976 - Sep 30 1977) and ending with WY 2024 (Oct 1 2024 - end of 
+# data set (July 31, close enough to the proper end of the WY for our purposes))
+
+chisal <-
+  seine %>% 
+  # select only chinook and (mostly) complete water years
+  filter(common_name == "Chinook Salmon" & 
+           date >= "1976-10-01") %>% 
+  # add water year (wy) and day of water year (wd) variables
+  mutate(
+    # water year
+    wy = calcWaterYear(date),
+    # day of water year (wd), wyMonth=10L bc water year begins Oct 1
+    wd = get_waterYearDay(date, wyMonth = 10L)) %>% 
+  # reorg & select columns
+  relocate(wy:wd, .after = date) %>% 
+  dplyr::select(c(location:water_temp, fork_length, race_by_length, count))
+
+### daily counts -----
+# aggregate to daily totals bc freq >1 seine per day
+daily <- 
+  chisal %>%
+  group_by(wy, wd) %>%
+  summarise(
+    daily_total = sum(count, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+### cumulative percent -----
+# calc cumulative percentage for each wy
+daily_cum <- 
+  daily %>%
+  group_by(wy) %>%
+  arrange(wd) %>%
+  mutate(
+    annual_total = sum(daily_total),
+    cum_total = cumsum(daily_total),
+    cum_percent = 100 * cum_total / annual_total
+  ) %>% 
+  ungroup() %>% 
+  arrange(wy, wd)
+
+
+# outlier is 1977
+ggplot(daily_cum,
+       aes(x = wd,
+           y = cum_percent,
+           group = wy,
+           color = factor(wy))) +
+  geom_line() +
+  geom_hline(yintercept = c(10, 50, 90),
+             linetype = "dashed") +
+  labs(x = "Day of Water Year",
+       y = "Cumulative % of Annual Total",
+       title = "Water Year Chinook Accumulation Curves") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+#changed the colors where the older years are lighter and newer years are darker to see the phenological shifts in timing 
+ggplot(daily_cum,
+       aes(x = wd,
+           y = cum_percent,
+           group = wy,
+           color = wy)) +         
+  geom_line() +
+  geom_hline(yintercept = c(10, 50, 90),
+             linetype = "dashed") +
+ scale_color_viridis_c(option = "mako", direction = -1) +
+  labs(x = "Day of Water Year",
+       y = "Cumulative % of Annual Total",
+       title = "Water Year Chinook Accumulation Curves") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+```
+
+Peter choose one of the two figures above and write your description here!
 
 ### Discussion and Suggested Action
 

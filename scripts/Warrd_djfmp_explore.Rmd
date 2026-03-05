@@ -31,6 +31,7 @@ library(stats)
 library(car)
 library(ggplot2)
 library(ggpubr)
+library(lubridate)
 ```
 
 #Import Data
@@ -549,6 +550,354 @@ Ok that was difficult! I would like to find a way to reduce the amount of water 
 Moving on...
 
 
+#Separating Sampling Methods
+Ok only going to focus on salmonids
+```{r}
+#Unique
+unique(combo_trawl$MethodCode)
 
+#Filtering for salmonids and for specific sites  
+salmonid_trawl <- combo_trawl %>% 
+  filter(OrganismCode == "CHN" | OrganismCode == "RBT") 
+  #filter(StationCode == "SB018M" | StationCode == "SB018N" | StationCode == "SB018S" |StationCode == "SB018X" | StationCode == "SJ054M" |StationCode == "SR055M")
+
+#Summming the counts per year to get abundances and getting runs 
+salmonid_trawl <- salmonid_trawl %>% 
+  mutate(
+    run = case_when(
+      OrganismCode == "RBT" ~ "steelhead",
+      !is.na(RaceByLength) ~ RaceByLength,
+      !is.na(RaceByTag) ~ RaceByTag,
+      TRUE ~ NA_character_
+    )
+  )
+
+salmonid_trawl <- salmonid_trawl %>%
+  mutate(date = as.Date(SampleDate))
+```
+
+## Annual Abundance
+```{r}
+#Annual abundaces all salmonids
+ggplot(
+  salmonid_trawl %>%
+    group_by(year) %>%
+    summarise(annual_abundance = sum(Count, na.rm = TRUE),
+              .groups = "drop"),
+  aes(x = year,
+      y = annual_abundance)
+) +
+  geom_line(color = "black") +
+  geom_smooth(method = "lm")+
+  geom_point() +
+  labs(
+    x = "Year",
+    y = "Total Annual Salmonid Abundance",
+    title = "Annual Salmonid Abundance Over Time"
+  ) +
+  theme_bw()
+
+ggsave(
+  filename = "/Users/abigailward/Downloads/annual_salmonid_abundance.png",
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+#Add annual abundance of fish column
+salmonid_trawl <- salmonid_trawl %>%
+  group_by(year) %>%
+  mutate(annual_abundance = sum(Count, na.rm = TRUE)) %>%
+  ungroup()
+
+#Create annual abundace dataset
+annual_data <- salmonid_trawl %>%
+  group_by(year) %>%
+  summarise(
+    annual_abundance = sum(Count, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+#See how salmon aubdance is changing over time 
+glm(annual_abundance ~ year,
+    family = poisson,
+    data = annual_data)
+
+
+
+#Annual abundaces by species 
+ggplot(
+  salmonid_trawl %>%
+    group_by(year, OrganismCode) %>%
+    summarise(annual_abundance = sum(Count, na.rm = TRUE),
+              .groups = "drop"),
+  aes(x = year,
+      y = annual_abundance,
+      color = OrganismCode)
+) +
+  geom_line() +
+  geom_point() +
+  theme_bw()
+
+#annual abundaces by run
+ggplot(
+  salmonid_trawl %>%
+    group_by(year, OrganismCode, run) %>%
+    summarise(annual_abundance = sum(Count, na.rm = TRUE),
+              .groups = "drop"),
+  aes(x = year,
+      y = annual_abundance,
+      color = run)
+) +
+  geom_line() +
+  facet_wrap(~ OrganismCode) +
+  theme_bw()
+
+```
+```{r}
+exp(-0.01146)
+```
+
+
+About a 1.1% decline per year on average since salmon abundance is mult by 0.9886. 
+
+Negative Binomial Generalized Linear Model??
+
+```{r}
+library(MASS)
+
+model_nb <- glm.nb(annual_abundance ~ year,
+                   data = annual_data)
+
+summary(model_nb)
+```
+
+```{r}
+exp(-0.01571)
+```
+
+About a 1.56% decline per year.
+
+
+## Water temps only for salmonid stations 
+```{r}
+ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.7) +
+  labs(
+    x = "Month",
+    y = "Water Temperature"
+  ) +
+  theme_minimal()
+
+ggplot(salmonid_trawl, aes(x = season, y = WaterTemp)) +
+  #facet_wrap(~year) +
+  geom_boxplot(fill = "tan", alpha = 0.7)
+
+
+#How has water temp changed over time
+annual_water_tempsalmo <- salmonid_trawl %>%
+  group_by(year) %>%
+  summarise(
+    mean_temp = mean(WaterTemp, na.rm = TRUE)
+  )
+
+ggplot(annual_water_tempsalmo, aes(x = year, y = mean_temp)) +
+  geom_line(color = "firebrick", size = 1) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  geom_point(color = "firebrick") +
+  theme_minimal()
+```
+
+##CPUE
+```{r}
+salmonid_trawl <- salmonid_trawl %>%
+  mutate(CPUE = Count / Volume) 
+
+cpue_summary <- salmonid_trawl %>%
+  group_by(year, CommonName, run) %>%
+  summarise(
+    mean_CPUE = mean(CPUE, na.rm = TRUE),
+    total_fish = sum(Count, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(cpue_summary, aes(x = year, y = mean_CPUE, color = CommonName)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_grid(~CommonName, scales = "free_y") +
+  theme_bw() 
+
+ggplot(cpue_summary, aes(x = year, y = mean_CPUE, color = run)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  theme_bw()
+
+```
+
+##Flow compared to abundance
+```{r}
+#Load in flow data
+library(dplyr)
+flow_70_83 <- read_csv("./data/processed/dayflow-results-1970-1983.csv")
+flow_84_96 <- read_csv("./data/processed/dayflow-results-1984-1996.csv")
+flow_97_23 <- read_csv("./data/processed/dayflow-results-1997-2023.csv")
+water_year <- read_xlsx("./data/processed/cdec-water-year-type-jun-2025.xlsx")
+
+water_year <- water_year %>%
+  rename(Year = WY) %>% 
+  filter(Area == "Sacramento Valley")
+
+allflow <- bind_rows(flow_70_83, flow_84_96, flow_97_23)
+allflow <- allflow %>% 
+ rename(SampleDate = Date) 
+
+#make sure date is date and in correct format
+allflow <- allflow %>%
+  mutate(SampleDate = as.Date(SampleDate, format = "%m/%d/%Y"))
+
+#Get water year for all NAs
+allflow <- allflow %>%
+  left_join(
+    water_year %>% dplyr::select(Year, WYT),
+    by = "Year"
+  ) %>%
+  mutate(
+    Y = WYT  
+  ) %>%
+  dplyr::select(-WYT) 
+
+ 
+```
+
+These datasets give net Delta outflow at Chipps island as well as inflow rates for various pathways into the Delta. For the purposes of this project, I'm focusing on flow rate out of the Delta (OUT).
+
+## Flow and WY for selected years of DJFMP
+```{r}
+#annual flow for Delta
+annual_flow <- allflow %>%
+  group_by(Year, Y) %>%                               
+  summarise(
+    mean_OUT = mean(OUT, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
+  geom_col(alpha = 0.8) +
+  scale_fill_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
+  scale_x_continuous(
+    breaks = seq(min(annual_flow$Year),
+                 max(annual_flow$Year),
+                 by = 5)
+  ) +
+  labs(
+    x = "Year",
+    y = "Mean Annual Flow (cfs)"
+  ) +
+  theme_bw()
+
+ggsave(
+  filename = "/Users/abigailward/Downloads/annual_flow_WYT.png",
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+ggplot(allflow, aes(x = SampleDate, y = OUT)) +
+  geom_line(alpha = 0.3) +           
+  geom_smooth(method = "loess") +    
+  theme_bw()
+
+ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
+  geom_line(alpha = 0.3) +           
+  geom_smooth(method = "lm") +    
+  theme_bw()
+```
+
+
+Water year type (Y) definitions by the state water board: 
+- W : Wet year type
+- AN : Above normal year type
+- BN : Below normal year type
+- D : Dry year type
+- C : Critical year type 
+
+Now I want to look at salmon abundaces as a function of flow:
+```{r}
+#Caluclate daily abundace 
+daily_salmonid_abundance <- salmonid_trawl %>%
+  group_by(SampleDate, CommonName, run) %>%
+  summarise(
+    total_fish = sum(Count, na.rm = TRUE),
+    .groups = "drop"
+  ) 
+
+
+
+#Merge abundances back in 
+salmonid_trawl <- salmonid_trawl %>%
+  left_join(daily_salmonid_abundance,
+            by = c("SampleDate", "CommonName", "run"))
+
+
+#Merge with flow data
+salmonid_trawl <- salmonid_trawl %>%
+  left_join(
+    allflow %>% dplyr::select(SampleDate, OUT, Y, Year),
+    by = "SampleDate"
+  )
+
+
+ggplot(salmonid_trawl, aes(x = OUT, y = total_fish, color = run)) +
+  geom_point(alpha = 0.5) +  
+  theme_bw()
+
+```
+
+Plots of flow and temperature as a function of salmon abundance
+```{r}
+#Flow
+ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = run)) +
+  geom_point(alpha = 0.5) +  
+  theme_bw()
+
+#Temp
+ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = run)) +
+  geom_point(alpha = 0.5) +  
+  theme_bw()
+
+#Turbity
+ggplot(salmonid_trawl, aes(x = Turbidity, y = Count, color = run)) +
+  geom_point(alpha = 0.5) +  
+  theme_bw()
+```
+
+
+
+
+Ok let's start modeling juvenile abundances as a function of environmental variables through this time period we have on hand. 
+
+Response variable is going to be juvenile salmonid abundance in the form of count data
+Predictor variables will be flow (using OUT from the DayFlow dataset), water temp, turbidity?, water year type... any others?
+
+Neg. binomial because of overdispertion for turbity and flow? Ask Malin or Clavin in class tomorrow 
+
+And then look at effects over time.
+
+
+```{r}
+library(brms)
+m.flow <- brm(
+  Count ~ log(OUT + 1),
+  family = negbinomial(),
+  data = salmonid_trawl,
+  chains = 4, cores = 4, iter = 4000
+)
+```
+
+
+
+Ok this is taking forever to run
+
+another approach?
 
 

@@ -59,6 +59,8 @@ Our immediate audience is comprised of our classmates and our professor for the 
 
 All data used in this project is from the Delta Juvenile Fish Monitoring Program (DJFMP) Environmental Data, accessed via the Environmental Data Initiative (EDI - <https://portal.edirepository.org/nis/mapbrowse?scope=edi&identifier=244>). Sampling locations are spread throughout the Sacramento–San Joaquin River Delta and span decades as monitoring has occurred from 1976 to present day. This program has monitored abundance and distribution of fish species utilizing both trawls and beach seines. Monitoring also include environmental data at all sites.
 
+Flow data was sourced from the California Department of Water Resources Dayflow data collection program (<https://data.cnra.ca.gov/dataset/dayflow>), with primary focus on flow rate in and around the Delta.
+
 Data used in this analysis was filtered to focus specifically on trawl survey data during the fall season. Here, we focus on two key water quality parameters measured within this data: temperature and salinity.
 
 Raw data were downloaded as CSV files and stored in the `data/` directory. Processed data used for analysis are generated via scripts in the `scripts/` directory.
@@ -70,8 +72,6 @@ Run `data/raw/edi.244.14.r` to retrieve raw data from EDI repository.
 In `.gitignore` run `data/processed/*.csv` and commit this change as ignoring our processed data files. These files are too large and must only be stored locally.
 
 Then run `scripts/creatingdataframes.R` to regenerate these dataframes locally in R.
-
-ADD MORE HERE about data access, packages needed, cloning the repo, etc.
 
 #### Workflow
 

@@ -121,8 +121,7 @@ salmonid_trawl <- salmonid_trawl %>%
 ```
 
 ```{r}
-#| results: asis
-#| fig-cap: "Figure 1. Juvenile salmon abundance over time"
+#| fig-cap: "Juvenile salmon abundance over time"
 
 ggplot(
   salmonid_trawl %>%
@@ -144,7 +143,7 @@ ggplot(
 ```
 
 ```{r}
-#| results: asis
+#| include: false
 
 #Add annual abundance of fish column
 salmonid_trawl <- salmonid_trawl %>%
@@ -244,8 +243,7 @@ salmonid_trawl <- salmonid_trawl %>%
 ```
 
 ```{r}
-#| results: asis
-#| fig-cap: "Figure 2. Mean annual flow by water year type"
+#| fig-cap: "Mean annual flow by water year type"
 
 #annual flow for Delta
 annual_flow <- allflow %>%
@@ -272,8 +270,7 @@ ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
 ```
 
 ```{r}
-#| results: asis
-#| fig-cap: "Figure 3. Linear trend of annual flow"
+#| fig-cap: "Linear trend of annual flow"
 
 ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
   geom_line(alpha = 0.3) +           
@@ -290,8 +287,7 @@ Over the past several decades, we've seen increasingly drier conditions and a re
 However, even in years classified as "Above Normal", the amount of water flowing out of the Delta can remain relatively low due to upstream storage, diversions, and exports to Southern California, agriculture and the Bay area (Fig. 2). This means that the ecological benefits of wetter years are not always fully realized within the Delta ecosystem or by the species within. Water management decisions during these times, then, become critical to sustaining populations and shaping the ecological conditions of the Delta.
 
 ```{r}
-#| results: asis
-#| fig-cap: "Figure 4. Daily salmonid abundance as a function of flow"
+#| fig-cap: "Daily salmonid abundance as a function of flow"
 
 ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
   geom_point()  +
@@ -307,6 +303,8 @@ ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
 Discuss here about how daily flows and water years effect abundance, discuss the model, etc...
 
 ```{r}
+#| include: false
+
 #Model looking at the effects of flow on daily salmon abundance 
 m.flow <- brm(
   Count ~ log(OUT + 1),
@@ -325,7 +323,7 @@ summary(m.flow)
 
 ```{r}
 #| results: asis
-#| fig-cap: "Figure 5. Mean water temperature by year"
+#| fig-cap: "Mean water temperature by year"
 
 #Calculaating annual water temp 
 annual_water_temp <- combo_trawl %>%
@@ -349,7 +347,7 @@ From these long-term water temperature records, there seems to be a downward tre
 
 ```{r}
 #| results: asis
-#| fig-cap: "Figure 6. Mean water temperature by year, 1995-2025"
+#| fig-cap: "Mean water temperature by year, 1995-2025"
 
 annual_water_temp %>% 
   filter(year > 1995) %>% 
@@ -368,7 +366,7 @@ Now, however, we are beginning to trend back upward to warming temperatures. Rec
 
 ```{r}
 #| results: asis
-#| fig-cap: "Figure 7. Delta mean monthly water temperature"
+#| fig-cap: "Delta mean monthly water temperature"
 
 ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
   geom_boxplot(fill = "skyblue", alpha = 0.7) +
@@ -383,7 +381,7 @@ The Delta exhibits strong seasonal variability in water temperature, driven by c
 
 ```{r}
 #| results: asis
-#| fig-cap: "Figure 8. Water temperature (C) effects on juvenile salmon abundance"
+#| fig-cap: "Water temperature (C) effects on juvenile salmon abundance"
 
 ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
   geom_point(alpha = 0.8) + 
@@ -399,7 +397,10 @@ Something about optimal water temp for juveniles and the effects of water temp e
 
 ```{r}
 #| results: asis
-#| fig-cap: "Figure 9. Decadal shifts in Delta water temperature"
+#| fig-cap: "Decadal shifts in Delta water temperature"
+
+#Changing the sample date column to recognize as date
+combo_trawl$SampleDate <- as.Date(combo_trawl$SampleDate, format = "%m/%d/%Y")
 
 #Get DOY for mapping
 combo_trawl <- combo_trawl %>%

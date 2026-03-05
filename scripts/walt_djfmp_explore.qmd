@@ -326,7 +326,6 @@ salmon_spp_station <- ggplot(data= focal_filter2, aes(x = year, y = Count, color
   theme_classic()+
   labs(
   title = "Salmon Population Counts Through Time",
-  subtitle = "Colored by Average Annual Temperature",
   x = "Year",
   y = "Population Count",
   color = "Avg Temp (°C)"
@@ -338,9 +337,19 @@ salmon_spp_station
 ```
 
 ```{r}
-salmon_spp_station2 <- ggplot(data= focal_filter2, aes(x = avg_temp, y = Count, color = year)) +
+ggsave(
+  filename = "salmontemp.png",
+  plot = salmon_spp_station,      # optional if it's the last plot
+  width = 8,           # in inches
+  height = 4,          # in inches
+  dpi = 300,            # resolution (300 = publication quality)
+  path = "../outputs"
+)
+```
+
+```{r}
+salmon_spp_station2 <- ggplot(data= focal_filter2, aes(x = avg_temp, y = Count)) +
   geom_point() +
-  scale_color_gradient(low = "blue", high = "red") +
   facet_wrap(OrganismCode ~., scales = "free_y") +
   theme_classic()
 salmon_spp_station2

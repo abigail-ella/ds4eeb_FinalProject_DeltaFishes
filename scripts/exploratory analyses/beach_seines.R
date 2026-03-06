@@ -1286,3 +1286,18 @@ ggplot(daily_cum,
               size = 1.2) +
   scale_y_continuous(limits = c(0, 100)) + # force the axis
   theme_bw()
+
+# analyses -----
+
+m.day10.wy <- 
+  brm(data = percentile_days,
+      # should be 'normal'...
+      family = gaussian,
+      # Specify model, '1 + ...' to so as to NOT force the intercept thru 0,0
+      day_10 ~ 1 + wy,
+      iter = 2000, warmup = 1000, chains = 4, cores = 4,
+      # seed set at '42', THE ANSWER
+      seed = 42,
+      # save model output
+      file = "m.day10.wy")
+summary(m.day10.wy)

@@ -586,12 +586,12 @@ ggplot(daily_cum,
   geom_line() +
   geom_hline(yintercept = c(10, 50, 90),
              linetype = "dashed") +
- scale_color_viridis_c(option = "mako", direction = -1) +
+  scale_color_viridis_c(option = "mako", direction = -1) +
   labs(x = "Day of Water Year",
        y = "Cumulative % of Annual Total",
-       title = "Water Year Chinook Accumulation Curves") +
-  theme_bw() +
-  theme(legend.position = "none")
+       title = "Juvenile Chinook Accumulation Curves",
+       color = "water year") +
+  theme_bw()
 
 
 ```

@@ -17,7 +17,7 @@ execute:
 
 ## State of Juvenile Salmon in the Delta Report
 
-Water is an important and valuable resource throughout the state of California. The Sacramento San-Joaquin River Delta is one of the most utilized water resources, providing water to nearly 27 million people across the state as well as supporting a \$1 billion/ year agricultural industry. Yet this area also contains a diversity of over 700 plant an animal species, many of which are important in recreational and community use. Understanding how to manage this resource in a way that both supports human endeavors and the vital ecosystem within this area is extremely important as we continue to face more extreme weather events.
+Water is an important and valuable resource throughout the state of California. The Sacramento San-Joaquin River Delta is one of the most utilized water resources, providing water to nearly 27 million people across the state as well as supporting a \$1 billion/ year agricultural industry. Yet this area also contains a diversity of over 700 plant and animal species, many of which are important in recreational and community use. Understanding how to manage this resource in a way that both supports human endeavors and the vital ecosystem within this area is extremely important as we continue to face more extreme weather events.
 
 ### Salmonid Importance
 
@@ -451,7 +451,7 @@ ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
 
 Discuss decadal shifts over time– do an analysis to see if decades are sig different from each other.
 
-#### Phenological Shifts 
+#### Phenological Shifts
 
 ```{r}
 #| fig-cap: "Shifts in juvenile outmigration time "

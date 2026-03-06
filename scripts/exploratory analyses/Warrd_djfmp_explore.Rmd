@@ -692,6 +692,13 @@ ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
   ) +
   theme_minimal()
 
+ggsave(
+  filename = "/Users/abigailward/Downloads/seasonal_watertemp.png",
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
 ggplot(salmonid_trawl, aes(x = season, y = WaterTemp)) +
   #facet_wrap(~year) +
   geom_boxplot(fill = "tan", alpha = 0.7)
@@ -704,11 +711,41 @@ annual_water_tempsalmo <- salmonid_trawl %>%
     mean_temp = mean(WaterTemp, na.rm = TRUE)
   )
 
-ggplot(annual_water_tempsalmo, aes(x = year, y = mean_temp)) +
+ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
   geom_line(color = "firebrick", size = 1) +
   geom_smooth(method = "lm", se = TRUE, color = "black") +
   geom_point(color = "firebrick") +
-  theme_minimal()
+  labs(
+    x = "Year",
+    y = "Mean Water Temperature"
+  ) +
+  theme_bw()
+
+ggsave(
+  filename = "/Users/abigailward/Downloads/annual_watertemp1.png",
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+annual_water_temp %>% 
+  filter(year > 1995) %>% 
+  ggplot(aes(x = year, y = mean_temp)) +
+  geom_line(color = "firebrick", size = 1) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  geom_point(color = "firebrick") +
+  labs(
+    x = "Year",
+    y = "Mean Water Temperature"
+  ) +
+  theme_bw()
+
+ggsave(
+  filename = "/Users/abigailward/Downloads/annual_watertemp2.png",
+  width = 8,
+  height = 6,
+  dpi = 300
+)
 ```
 
 ##CPUE
@@ -805,6 +842,9 @@ ggsave(
   dpi = 300
 )
 
+
+
+
 ggplot(allflow, aes(x = SampleDate, y = OUT)) +
   geom_line(alpha = 0.3) +           
   geom_smooth(method = "loess") +    
@@ -853,6 +893,52 @@ salmonid_trawl <- salmonid_trawl %>%
 ggplot(salmonid_trawl, aes(x = OUT, y = total_fish, color = run)) +
   geom_point(alpha = 0.5) +  
   theme_bw()
+
+#Get annual abundance data merged with flow
+annual_data<-annual_data %>% 
+  rename(Year = year)
+
+#Join dataframes
+annual_data<-annual_data %>% 
+  left_join(
+    annual_flow, by = "Year"
+  )
+
+#GEt scale for adding salmon abundance to flow chart
+scale_factor_salmo <- max(annual_data$annual_abundance, na.rm = TRUE) / 
+                max(annual_data$mean_OUT, na.rm = TRUE)
+annual_data <- annual_data %>%
+  mutate(count_scaled = annual_abundance * scale_factor_salmo)
+
+
+#Plot with both abundace and flow
+ggplot(annual_data, aes(x = Year, y = mean_OUT, fill = Y)) +
+  geom_col(alpha = 0.8) +
+  scale_fill_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
+  scale_x_continuous(
+    breaks = seq(min(annual_flow$Year),
+                 max(annual_flow$Year),
+                 by = 5)
+  ) +
+  geom_line(aes(y = count_scaled, color = "Annual Salmonid Abundance", group = 1), 
+            linetype = "solid", color ="black", size = 1) +
+  scale_y_continuous(
+    name = "Salmonid Abundance",
+    sec.axis = sec_axis(~ . / scale_factor_salmo,
+                        name = "Annual Salmonid Abundance")
+  ) +
+  labs(
+    x = "Year",
+    y = "Mean Annual Flow (cfs)"
+  ) +
+  theme_bw()
+
+ggsave(
+  filename = "/Users/abigailward/Downloads/annual_flow_abundance.png",
+  width = 8,
+  height = 6,
+  dpi = 300
+)
 
 ```
 

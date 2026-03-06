@@ -132,6 +132,7 @@ salmonid_trawl <- salmonid_trawl %>%
 ```{r}
 #| fig-cap: "Juvenile salmon abundance over time"
 
+#Figure 1 
 ggplot(
   salmonid_trawl %>%
     group_by(year) %>%
@@ -264,6 +265,7 @@ annual_flow <- allflow %>%
     .groups = "drop"
   )
 
+#Figure 2
 ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
   geom_col(alpha = 0.8) +
   scale_fill_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
@@ -283,6 +285,7 @@ ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
 ```{r}
 #| fig-cap: "Linear trend of annual flow"
 
+#Figure 3
 ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
   geom_line(alpha = 0.3) +           
   geom_smooth(method = "lm") + 
@@ -300,6 +303,7 @@ However, even in years classified as "Above Normal", the amount of water flowing
 ```{r}
 #| fig-cap: "Daily salmonid abundance as a function of flow"
 
+#Figure 4
 ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
   geom_point()  +
   scale_color_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
@@ -343,6 +347,7 @@ annual_water_temp <- combo_trawl %>%
     mean_temp = mean(WaterTemp, na.rm = TRUE)
   )
 
+#Figure 5
 ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
   geom_line(color = "firebrick", size = 1) +
   geom_smooth(method = "lm", se = TRUE, color = "black") +
@@ -379,6 +384,7 @@ Now, however, we are beginning to trend back upward to warming temperatures. Rec
 #| results: asis
 #| fig-cap: "Delta mean monthly water temperature"
 
+#Figure 6
 ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
   geom_boxplot(fill = "skyblue", alpha = 0.7) +
   labs(
@@ -391,9 +397,9 @@ ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
 The Delta exhibits strong seasonal variability in water temperature, driven by changes in air temperature, inflows, and hydrologic conditions throughout the year. During winter and early spring, temperatures tend to remain relatively cool as snowmelt and increased river flows enter the system. However, as summer progresses and flows decrease, water temperatures rise substantially across the Delta. This is incredibly important when considering juvenile fish migrations and the
 
 ```{r}
-#| results: asis
 #| fig-cap: "Water temperature (C) effects on juvenile salmon abundance"
 
+#Figure 7
 ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
   geom_point(alpha = 0.8) + 
   scale_color_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
@@ -424,7 +430,7 @@ daily_water_temp <- combo_trawl %>%
     .groups = "drop"
   )
 
-#Plot
+#Figure 8
 ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
   geom_line(color = "gray70", alpha = 0.5) +
   geom_line(
@@ -442,9 +448,9 @@ ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
   theme_minimal()
 
 ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
-  geom_smooth(aes(color = year),
-              method = "loess", se = FALSE, span = 0.25) +
-  scale_color_viridis_c(option = "rocket", direction = 1) +
+  geom_line(aes(color = year),
+              method = "gam", se = FALSE, span = 0.25) +
+  scale_color_viridis_c(option = "mako", direction = 1) +
   #scale_linewidth(range = c(0.3, 1.4), guide = "none") +
   #scale_alpha(range = c(0.3, 1), guide = "none") +
   theme_minimal()
@@ -549,7 +555,7 @@ chisal <-
     wd = get_waterYearDay(date, wyMonth = 10L)) %>% 
   # reorg & select columns
   relocate(wy:wd, .after = date) %>% 
-  select(c(location:water_temp, fork_length, race_by_length, count))
+  dplyr::select(c(location:water_temp, fork_length, race_by_length, count))
 
 ### daily counts -----
 # aggregate to daily totals bc freq >1 seine per day
@@ -655,11 +661,9 @@ pctl_days %>%
   theme_bw()
 ```
 
-
 Run the model, *day of the water year as a function of water year*. The day 10% of the total salmon observed for the year.
 
 ```{r}
-#| results: asis
 m.d_10.wy <- 
   brm(data = percentile_days, #Givethemodel the percentile_days data
       # Choose agaussian(normal)distribution
@@ -680,7 +684,6 @@ summary(m.d_10.wy)
 Run the model, *day of the water year as a function of water year*. The day 50% of the total salmon observed for the year.
 
 ```{r}
-#| results: asis
 m.d_50.wy <- 
   brm(data = percentile_days, #Givethemodel the percentile_days data
       # Choose agaussian(normal)distribution
@@ -701,7 +704,6 @@ summary(m.d_50.wy)
 Run the model, *day of the water year as a function of water year*. The day 90% of the total salmon observed for the year.
 
 ```{r}
-#| results: asis
 m.d_90.wy <- 
   brm(data = percentile_days, #Givethemodel the percentile_days data
       # Choose agaussian(normal)distribution
@@ -722,7 +724,6 @@ summary(m.d_90.wy)
 Run plots.
 
 ```{r}
-#| results: asis
 # run the model plots for m.d_10.wy, m.d_50.wy, m.d_90.wy
 plot(m.d_10.wy)
 plot(m.d_50.wy)
@@ -732,7 +733,6 @@ plot(m.d_90.wy)
 ##### Timing Shifts
 
 The accumulation curves and the apparent downward trends in the accumulation thresholds suggest that juvenile Chinook are entering the Delta earlier each year.
-
 
 ### Discussion and Suggested Action
 

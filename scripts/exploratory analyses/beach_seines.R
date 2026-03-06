@@ -6,6 +6,8 @@ library(gridExtra)
 library(dataRetrieval)
 # remotes::install_github("doi-usgs/EflowStats@v5.2.0")
 library(EflowStats)
+library(readxl)
+library(fishualize)
 
 # get data ------
 
@@ -987,6 +989,7 @@ seine_wide <-
 # wrangle -----
 ## QL salmon -----
 # quick look at salmon captured September through December
+# haven't controled for effort, but a first look...
 
 fall_salmon <- 
   seine %>% 
@@ -1016,8 +1019,8 @@ salmon_by_year %>%
   geom_point() +
   theme_bw()
 
-## wy chinook -----
-# add water year and day of water year
+## water year -----
+# add water year (wy) and day of water year (wd)
 # select Chinook counts (no need for 'no catch'), begining with WY 1976 
 # (Oct 1 1976 - Sep 30 1977) and ending with WY 2024 (Oct 1 2024 - end of 
 # data set (July 31, close enough to the proper end of the WY for our purposes))
@@ -1035,7 +1038,7 @@ chisal <-
     wd = get_waterYearDay(date, wyMonth = 10L)) %>% 
   # reorg & select columns
   relocate(wy:wd, .after = date) %>% 
-  dplyr::select(c(location:water_temp, fork_length, race_by_length, count))
+  select(c(location:water_temp, fork_length, race_by_length, count))
 
 ### daily counts -----
 # aggregate to daily totals bc freq >1 seine per day
@@ -1061,25 +1064,48 @@ daily_cum <-
   ungroup() %>% 
   arrange(wy, wd)
 
-### plot accumulation curves -----
+### add water year type -----
+# pull in CDEC data on year type
+wy_type <- 
+  read_excel("data/processed/cdec-water-year-type-jun-2025.xlsx") %>% 
+  mutate(wy = WY,
+         wyt = factor(WYT),
+         watershed = factor(Area),
+         .keep = "unused")
 
+daily_cum <-
+  wy_type %>% 
+  filter(watershed == "Sacramento Valley") %>% 
+  right_join(daily_cum,
+             by = "wy") %>% 
+  select(-watershed)
+
+write_rds(daily_cum, "data/processed/daily_cum.rds")
+
+# figures -----
+
+## accumulation curves -----
 # color by year
 # outlier is 1977
+
+# changed the colors where the older years are lighter and newer years are 
+# darker to see the phenological shifts in timing 
 ggplot(daily_cum,
        aes(x = wd,
            y = cum_percent,
            group = wy,
-           color = factor(wy))) +
+           color = wy)) +         
   geom_line() +
   geom_hline(yintercept = c(10, 50, 90),
              linetype = "dashed") +
+  scale_color_viridis_c(option = "mako", direction = -1) +
   labs(x = "Day of Water Year",
        y = "Cumulative % of Annual Total",
-       title = "Water Year Chinook Accumulation Curves") +
+       title = "Juvenile Chinook Accumulation Curves") +
   theme_bw() +
   theme(legend.position = "none")
 
-### ID thresholds ----
+## ID thresholds ----
 # day of water year when the 10%, 50% and 90% of total annual numbers are reached
 
 # using 10%, 50%, and 90% accumulation thresholds (arbitrary)
@@ -1096,3 +1122,166 @@ percentile_days <-
     .groups = "drop"
   )
 
+write_rds(percentile_days, "data/processed/percentile_days.rds")
+
+# pivot data to long format to facilitate graphics
+pctl_days <-
+  percentile_days %>% 
+  pivot_longer(cols = c(day_10, day_50, day_90), 
+               names_to = "percentile", 
+               values_to = "wd") %>% 
+  mutate(percentile = factor(percentile))
+
+# same data without 1997
+pctl_days_red <-
+  pctl_days %>% 
+  filter(wy != "1977")
+
+## pctl thresholds ----
+# plot days when percentile thresholds are reached
+
+### standard colors ----
+std_colors <- c("darkblue", "green", "red")
+
+pctl_days %>% 
+  ggplot(
+    # color points according to threshold (10, 50, 90%)
+    aes(x = wy, y = wd, color = percentile)
+  ) +
+  geom_point() +
+  geom_smooth(data = pctl_days_red,
+              # show linear trends
+              method = "lm",
+              se = TRUE) +
+  labs(title = "Chinook Salmon Outmigration Timing",
+       subtitle = "1977 excluded from trend analyses",
+       x = "Water Year",
+       y = "Day of the Water Year",
+       color = "Percentile") +
+  scale_color_manual(values = std_colors) +
+  theme_bw()
+
+### fish colors -----
+#### Oncorhynchus -----
+pctl_days %>% 
+  ggplot(
+    # color points according to threshold (10, 50, 90%)
+    aes(x = wy, y = wd, color = percentile)
+  ) +
+  geom_point(size = 4) +
+  scale_color_fish(discrete = TRUE,
+                   option = "Oncorhynchus_tshawytscha",
+                   alpha = 0.8) +
+  geom_smooth(data = pctl_days_red,
+              alpha = 0.2,
+              # show linear trends
+              method = "lm",
+              se = TRUE) +
+  labs(title = "Chinook Salmon Outmigration Timing",
+       subtitle = "1977 excluded from trend analyses",
+       x = "Water Year",
+       y = "Day of the Water Year",
+       color = "Percentile") +
+  theme_bw()
+
+
+#### Hypsypops -----
+
+pctl_days %>% 
+  ggplot(
+    # color points according to threshold (10, 50, 90%)
+    aes(x = wy, y = wd, color = percentile)
+  ) +
+  geom_point(size = 4) +
+  scale_color_fish(discrete = TRUE,
+                  option = "Hypsypops_rubicundus",
+                  alpha = 0.6) +
+  geom_smooth(data = pctl_days_red,
+              alpha = 0.2,
+              # show linear trends
+              method = "lm",
+              se = TRUE) +
+  labs(title = "Chinook Salmon Outmigration Timing",
+       subtitle = "1977 excluded from trend analyses",
+       x = "Water Year",
+       y = "Day of the Water Year",
+       color = "Percentile") +
+  theme_bw()
+
+#### scratch colors ----
+fish_palettes()
+salmon_colors <-
+  c(fishualize(n = 3, 
+               option = "Oncorhynchus_tshawytscha", 
+               end = 0.9))
+
+my_colors <- 
+  fishualize(n = 3,
+             option = "Hypsypops_rubicundus",
+             end = 0.5)
+
+gplot(pctl_days,
+      aes(x = wy, y = wd, color = percentile)) +
+  geom_point(size = 4) +
+  scale_color_fish(discrete = TRUE, option = "Oncorhynchus_tshawytscha", direction = -1)
+
+ggplot(daily_cum,
+       aes(x = wd,
+           y = cum_percent,
+           group = wy,
+           color = wy)) +         
+  geom_line(alpha = 0.6) +
+  geom_hline(yintercept = c(10, 50, 90),
+             linetype = "dashed") +
+  scale_color_fish(option = "Aluterus_scriptus") +
+  labs(x = "Day of Water Year",
+       y = "Cumulative % of Annual Total",
+       title = "Juvenile Chinook Accumulation Curves",
+       color = "temporal trend") +
+  theme_bw()
+
+## more curves ----
+
+wyt_colors <- c("W" = "#0072B2", "AN" = "#56B4E9", "BN" = "#009E73", 
+                "D" = "#E69F00", "C" = "#E34234")
+
+ggplot(daily_cum,
+       aes(x = wd,
+           y = cum_percent,
+           group = wy,      # individual curves for each year
+           color = wyt)) +  # color years by category        
+  geom_line(alpha = 1) +    
+  geom_hline(yintercept = c(10, 50, 90),
+             linetype = "dashed") +
+  scale_color_manual(values = wyt_colors) +
+  labs(x = "Day of Water Year",
+       y = "Cumulative % of Annual Total",
+       title = "Juvenile Chinook Accumulation Curves") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+# it looks like the slope at 50% (+/- 40%) is steeper when it's drier; check 
+# this out...eventually!
+
+# tried
+# geom_smooth(aes(group = wyt), 
+#            method = "loess", 
+#            span = 0.9,
+#            size = 1.5, 
+#            se = FALSE)
+
+# try a constrained b-spline (sim to monotonic regression?) to ensure the curve 
+# always increases and stays within the 0–100 bounds
+library(scam)
+
+ggplot(daily_cum,
+       aes(x = wd, 
+           y = cum_percent, 
+           color = wyt)) +
+  geom_line(alpha = 0.1) + # individual years
+  geom_smooth(method = "scam", 
+              formula = y ~ s(x, bs = "mpd"), 
+              se = FALSE, 
+              size = 1.2) +
+  scale_y_continuous(limits = c(0, 100)) + # force the axis
+  theme_bw()

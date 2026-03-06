@@ -57,6 +57,7 @@ library(gridExtra)
 library(dataRetrieval)
 remotes::install_github("doi-usgs/EflowStats@v5.2.0")
 library(EflowStats)
+library(fishualize)
 ```
 
 ```{r}
@@ -540,7 +541,7 @@ chisal <-
     wd = get_waterYearDay(date, wyMonth = 10L)) %>% 
   # reorg & select columns
   relocate(wy:wd, .after = date) %>% 
-  dplyr::select(c(location:water_temp, fork_length, race_by_length, count))
+  select(c(location:water_temp, fork_length, race_by_length, count))
 
 ### daily counts -----
 # aggregate to daily totals bc freq >1 seine per day
@@ -566,23 +567,9 @@ daily_cum <-
   ungroup() %>% 
   arrange(wy, wd)
 
-
 # outlier is 1977
-ggplot(daily_cum,
-       aes(x = wd,
-           y = cum_percent,
-           group = wy,
-           color = factor(wy))) +
-  geom_line() +
-  geom_hline(yintercept = c(10, 50, 90),
-             linetype = "dashed") +
-  labs(x = "Day of Water Year",
-       y = "Cumulative % of Annual Total",
-       title = "Water Year Chinook Accumulation Curves") +
-  theme_bw() +
-  theme(legend.position = "none")
 
-#changed the colors where the older years are lighter and newer years are darker to see the phenological shifts in timing 
+# changed the colors where the older years are lighter and newer years are darker to see the phenological shifts in timing 
 ggplot(daily_cum,
        aes(x = wd,
            y = cum_percent,
@@ -601,7 +588,64 @@ ggplot(daily_cum,
 
 ```
 
-Peter choose one of the two figures above and write your description here!
+The figure above shows the year-to-year differences in the timing and the pace at which outmigrating juvenile salmon enter the Delta. Day of water year is equivalent to Julian Day, but, consistent with Water Years, begins on October 1 and ends on September 30. The earliest outmigrants appear in the beach seine samples around day 25 of the water year and 10% of the outmigrants have appeared by about day 100. Note that the rightmost accumulation curve is from the first year of the beach seine surveys, 1977. As an extreme outlier, the probability of some kind of sampling or data quality issue is quite high, and we have excluded these data from analyses until we learn more about the circumstances and the potential sources for error or some other explanatory factor.
+
+To examine the year-to-year differences more closely, we set 10%, 50% and 90% accumulation thresholds ("day_10", "day_50", and "day_90") for the migration timing, and compared these values across years.
+
+```{r}
+## ID thresholds ----
+# day of water year when the 10%, 50% and 90% of total annual numbers are reached
+
+# using 10%, 50%, and 90% accumulation thresholds (arbitrary)
+thresholds <- c(10, 50, 90)
+
+# gen df of water year days when threshold reached for each year
+percentile_days <- 
+  daily_cum %>%
+  group_by(wy) %>%
+  summarise(
+    day_10 = min(wd[cum_percent >= 10]),
+    day_50 = min(wd[cum_percent >= 50]),
+    day_90 = min(wd[cum_percent >= 90]),
+    .groups = "drop"
+  ) %>% 
+  print()
+
+# pivot data to long format to facilitate graphics
+pctl_days <-
+  percentile_days %>% 
+  pivot_longer(cols = c(day_10, day_50, day_90), 
+               names_to = "percentile", 
+               values_to = "wd") %>% 
+  mutate(percentile = factor(percentile))
+
+# same data without 1997
+pctl_days_red <-
+  pctl_days %>% 
+  filter(wy != "1977")
+
+# figure shows the day of the water year for each threshold (10, 50, 90%) for each year
+pctl_days %>% 
+  ggplot(
+    # color points according to threshold (10, 50, 90%)
+    aes(x = wy, y = wd, color = percentile)
+  ) +
+  geom_point(size = 4) +
+  scale_color_fish(discrete = TRUE,
+                  option = "Hypsypops_rubicundus",
+                  alpha = 0.6) +
+  geom_smooth(data = pctl_days_red,
+              alpha = 0.2,
+              # show linear trends
+              method = "lm",
+              se = TRUE) +
+  labs(title = "Chinook Salmon Outmigration Timing",
+       subtitle = "1977 excluded from trend analyses",
+       x = "Water Year",
+       y = "Day of the Water Year",
+       color = "Percentile") +
+  theme_bw()
+```
 
 ### Discussion and Suggested Action
 

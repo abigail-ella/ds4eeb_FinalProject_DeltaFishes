@@ -13,6 +13,7 @@ library(stats)
 library(car)
 library(ggplot2)
 library(ggpubr)
+library(ggeffects)
 ### give him a dag
 ## identify which beach sein sites that have been used the most consistently 
 
@@ -229,14 +230,56 @@ p_2 <- p_2 %>%
     relationship = "many-to-many" # added this to silence the many to many relationship between x and y
   )
 
-# filter out salmon
+################### new stuff
+### Test some linear models, similar to those we worked in class, to see if year type can explain the year-to-year differences in migration timing (eg day of 10% accumulation).
+### That analysis, with and without 1977 (outlier), would be a great contribution to the final proj!
+## Get the graph first then do the model
 
-wy_percent <- readxl::read_xlsx("cdec-water-year-type-jun-2025.xlsx")
-head(wy_percent)
-# I think I need to figure out which site is sacramento and which site is san joaquin
-head(percentile_days)
-# scratch that I just need to add a column that has water type and match it with year in percentile_days
+std_colors <- c("darkblue", "green", "red")
 
-final_1 <- wy_percent %>%
-  left_join(percentile_days, by = c("WY" = "wy"))
-head(wy_percent)
+pctl_days %>% 
+  ggplot(
+    # color points according to threshold (10, 50, 90%)
+    aes(x = wy, y = wd, color = percentile)
+  ) +
+  geom_point() +
+  geom_smooth(data = pctl_days_red,
+              # show linear trends
+              method = "lm",
+              se = TRUE) +
+  labs(title = "Chinook Salmon Outmigration Timing",
+       subtitle = "1977 excluded from trend analyses",
+       x = "Water Year",
+       y = "Day of the Water Year",
+       color = "Percentile") +
+  scale_color_manual(values = std_colors) +
+  theme_bw()
+
+### fish colors -----
+#### Oncorhynchus -----
+model<-pctl_days %>% 
+  ggplot(
+    # color points according to threshold (10, 50, 90%)
+    aes(x = wy, y = wd, color = percentile)
+  ) +
+  geom_point(size = .8) +
+  scale_color_fish(discrete = TRUE,
+                   option = "Oncorhynchus_tshawytscha",
+                   alpha = 0.8) +
+  geom_smooth(data = pctl_days_red,
+              alpha = 0.2,
+              # show linear trends
+              method = "lm",
+              se = TRUE) +
+  labs(title = "Chinook Salmon Outmigration Timing",
+       subtitle = "1977 excluded from trend analyses",
+       x = "Water Year",
+       y = "Day of the Water Year",
+       color = "Percentile") +
+  theme_bw()
+
+
+#### Hypsypops -----
+
+
+  

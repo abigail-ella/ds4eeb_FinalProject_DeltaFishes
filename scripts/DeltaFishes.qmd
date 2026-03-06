@@ -647,6 +647,79 @@ pctl_days %>%
   theme_bw()
 ```
 
+Run the model, *day of the water year as a function of water year*. The day 10% of the total salmon observed for the year.
+
+```{r}
+#| results: asis
+m.d_10.wy <- 
+  brm(data = percentile_days, #Givethemodel the percentile_days data
+      # Choose agaussian(normal)distribution
+      family= gaussian,
+      # Specify the modelhere.
+      day_10 ~ 1+ wy,
+      # Here's where you specify parameters for executing the Markovchains
+      # We'reusing similartothedefaults,except we set cores to 4 so the analys is runs fasterthanthedefaultof1
+      iter = 2000, warmup= 1000, chains= 4, cores=4,
+      # Setting the "seed"determines which randomnumbers will get sampled.
+      # In this case, it makes the randomness of the Markovchain runs reproducible
+      # (so that both of us get the exact same results when running the model)
+      seed = 4)
+
+summary(m.d_10.wy)
+```
+
+Run the model, *day of the water year as a function of water year*. The day 50% of the total salmon observed for the year.
+
+```{r}
+#| results: asis
+m.d_50.wy <- 
+  brm(data = percentile_days, #Givethemodel the percentile_days data
+      # Choose agaussian(normal)distribution
+      family= gaussian,
+      # Specify the modelhere.
+      day_50 ~ 1+ wy,
+      # Here's where you specify parameters for executing the Markovchains
+      # We'reusing similartothedefaults,except we set cores to 4 so the analys is runs fasterthanthedefaultof1
+      iter = 2000, warmup= 1000, chains= 4, cores=4,
+      # Setting the "seed"determines which randomnumbers will get sampled.
+      # In this case, it makes the randomness of the Markovchain runs reproducible
+      # (so that both of us get the exact same results when running the model)
+      seed = 4)
+    
+summary(m.d_50.wy)
+```
+
+Run the model, *day of the water year as a function of water year*. The day 90% of the total salmon observed for the year.
+
+```{r}
+#| results: asis
+m.d_90.wy <- 
+  brm(data = percentile_days, #Givethemodel the percentile_days data
+      # Choose agaussian(normal)distribution
+      family= gaussian,
+      # Specify the modelhere.
+      day_90 ~ 1+ wy,
+      # Here's where you specify parameters for executing the Markovchains
+      # We'reusing similartothedefaults,except we set cores to 4 so the analys is runs fasterthanthedefaultof1
+      iter = 2000, warmup= 1000, chains= 4, cores=4,
+      # Setting the "seed"determines which randomnumbers will get sampled.
+      # In this case, it makes the randomness of the Markovchain runs reproducible
+      # (so that both of us get the exact same results when running the model)
+      seed = 4)
+
+summary(m.d_90.wy)
+```
+
+Run plots.
+
+```{r}
+#| results: asis
+# run the model plots for m.d_10.wy, m.d_50.wy, m.d_90.wy
+plot(m.d_10.wy)
+plot(m.d_50.wy)
+plot(m.d_90.wy)
+```
+
 ### Discussion and Suggested Action
 
 How can these results be used in management decisions and policy changes...

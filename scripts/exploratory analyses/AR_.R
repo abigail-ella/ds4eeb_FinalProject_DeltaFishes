@@ -257,7 +257,7 @@ pctl_days %>%
 
 ### fish colors -----
 #### Oncorhynchus -----
-model<-pctl_days %>% 
+pctl_days %>% 
   ggplot(
     # color points according to threshold (10, 50, 90%)
     aes(x = wy, y = wd, color = percentile)
@@ -278,8 +278,62 @@ model<-pctl_days %>%
        color = "Percentile") +
   theme_bw()
 
+library(brms)
+#### run model -----
+# Day of the water year as a funciton of water year
+m.d_10.wy <- 
+  brm(data = percentile_days, #Givethemodel the percentile_days data
+      # Choose agaussian(normal)distribution
+      family= gaussian,
+      # Specify the modelhere.
+      day_10 ~ 1+ wy,
+      # Here's where you specify parameters for executing the Markovchains
+      # We'reusing similartothedefaults,except we set cores to 4 so the analys is runs fasterthanthedefaultof1
+      iter = 2000, warmup= 1000, chains= 4, cores=4,
+      # Setting the "seed"determines which randomnumbers will get sampled.
+      # In this case, it makes the randomness of the Markovchain runs reproducible
+      # (so that both of us get the exact same results when running the model)
+      seed = 4)
+      # Save the fit the dmodel object as output-helpful for reloading in the output later
+      #file = "m.d_10.wy") not sure where I want to save it
 
-#### Hypsypops -----
+summary(m.d_10.wy)
+plot(m.d_10.wy)
+# run model for 50% of the salmon caught that year
+m.d_50.wy <- 
+  brm(data = percentile_days, #Givethemodel the percentile_days data
+      # Choose agaussian(normal)distribution
+      family= gaussian,
+      # Specify the modelhere.
+      day_50 ~ 1+ wy,
+      # Here's where you specify parameters for executing the Markovchains
+      # We'reusing similartothedefaults,except we set cores to 4 so the analys is runs fasterthanthedefaultof1
+      iter = 2000, warmup= 1000, chains= 4, cores=4,
+      # Setting the "seed"determines which randomnumbers will get sampled.
+      # In this case, it makes the randomness of the Markovchain runs reproducible
+      # (so that both of us get the exact same results when running the model)
+      seed = 4)
 
+summary(m.d_50.wy)
+# run model for 90% of the salmon caught that year
+m.d_90.wy <- 
+  brm(data = percentile_days, #Givethemodel the percentile_days data
+      # Choose agaussian(normal)distribution
+      family= gaussian,
+      # Specify the modelhere.
+      day_90 ~ 1+ wy,
+      # Here's where you specify parameters for executing the Markovchains
+      # We'reusing similartothedefaults,except we set cores to 4 so the analys is runs fasterthanthedefaultof1
+      iter = 2000, warmup= 1000, chains= 4, cores=4,
+      # Setting the "seed"determines which randomnumbers will get sampled.
+      # In this case, it makes the randomness of the Markovchain runs reproducible
+      # (so that both of us get the exact same results when running the model)
+      seed = 4)
 
-  
+summary(m.d_90.wy)
+# plot m.d_10.wy
+plot(m.d_10.wy)
+# plot m.d_50.wy
+plot(m.d_90.wy)
+#plot(m.d_90.wy)
+plot(m.d_90.wy)

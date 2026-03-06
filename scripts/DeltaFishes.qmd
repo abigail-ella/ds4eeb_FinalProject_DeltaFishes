@@ -655,7 +655,7 @@ pctl_days %>%
   theme_bw()
 ```
 
-<<<<<<< HEAD
+
 Run the model, *day of the water year as a function of water year*. The day 10% of the total salmon observed for the year.
 
 ```{r}
@@ -732,7 +732,7 @@ plot(m.d_90.wy)
 ##### Timing Shifts
 
 The accumulation curves and the apparent downward trends in the accumulation thresholds suggest that juvenile Chinook are entering the Delta earlier each year.
->>>>>>> 4629b955ddc84fe8318ff418c6dd26476e839a17
+
 
 ### Discussion and Suggested Action
 

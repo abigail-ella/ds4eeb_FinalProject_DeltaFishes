@@ -8,6 +8,7 @@ library(dataRetrieval)
 library(EflowStats)
 library(readxl)
 library(fishualize)
+library(brms)
 
 # get data ------
 

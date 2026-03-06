@@ -454,6 +454,14 @@ Discuss decadal shifts over time– do an analysis to see if decades are sig dif
 
 #### Phenological Shifts
 
+The timing of juvenile Chinook outmigration differs among run types, but is also affected by environmental variables, particularly flow and temperature. As a result, the year-to-year differences in *when* these fish pass through the Delta is likely a reflection of the conditions that they experience. We explored the beach seine data from the Delta Juvenile Fish Monitoring Program with the objective of visualizing patterns in the phenology of juvenile outmigration. We limited the data we used to samples from October through December to match the seasonality of the FMWT sampling (see above), and we used data from the sites that appeared to be sampled most consistently from 1977 through 2025. We pooled all run types together in this analysis: The data do include run type categories based on LAD (length-at-date), but these designations are notoriously inaccurate and, because we focused on Fall and early Winter, the vast majority of the salmon included in these data were almost certainly Fall Run and early Fall run fish with few Winter and Spring Run Chinook among them. We tracked these counts over time by "day of water year", where day 0 was October 1 and day 365 (or 366) was September 30.
+
+##### Accumulation Curves
+
+To compare yearly migration patterns, we calculated the cumulative totals for each year, summing the counts for juvenile Chinook across all of the beach seine sites. We standardized these counts as a cumulative percentage of the annual total, and generated accumulation curves for each year.
+
+The figure below shows the year-to-year differences in the timing and the pace at which outmigrating juvenile salmon enter the Delta. The earliest outmigrants appear in the beach seine samples around day 25 of the water year and 10% of the outmigrants have appeared by about day 100. Note that the rightmost accumulation curve is from the first year of the beach seine surveys, 1977. As an extreme outlier, the probability of some kind of sampling or data quality issue is quite high, and we have excluded these data from analyses until we learn more about the circumstances and the potential sources for error or some other explanatory factor.
+
 ```{r}
 #| fig-cap: "Shifts in juvenile outmigration time "
 
@@ -588,7 +596,7 @@ ggplot(daily_cum,
 
 ```
 
-The figure above shows the year-to-year differences in the timing and the pace at which outmigrating juvenile salmon enter the Delta. Day of water year is equivalent to Julian Day, but, consistent with Water Years, begins on October 1 and ends on September 30. The earliest outmigrants appear in the beach seine samples around day 25 of the water year and 10% of the outmigrants have appeared by about day 100. Note that the rightmost accumulation curve is from the first year of the beach seine surveys, 1977. As an extreme outlier, the probability of some kind of sampling or data quality issue is quite high, and we have excluded these data from analyses until we learn more about the circumstances and the potential sources for error or some other explanatory factor.
+##### Thresholds
 
 To examine the year-to-year differences more closely, we set 10%, 50% and 90% accumulation thresholds ("day_10", "day_50", and "day_90") for the migration timing, and compared these values across years.
 
@@ -646,6 +654,10 @@ pctl_days %>%
        color = "Percentile") +
   theme_bw()
 ```
+
+##### Timing Shifts
+
+The accumulation curves and the apparent downward trends in the accumulation thresholds suggest that juvenile Chinook are entering the Delta earlier each year.
 
 ### Discussion and Suggested Action
 

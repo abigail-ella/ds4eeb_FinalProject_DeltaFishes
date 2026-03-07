@@ -73,14 +73,9 @@ combo_trawl$year <- as.numeric(combo_trawl$year)
 ### Joining Tables for Taxonomy
 
 ```{r}
-trawl_joined <- combo_trawl %>%
+#combining the trawl data with taxonomy
+trawl_joined <- combo_trawl %>% 
   left_join(taxonomy, by = "OrganismCode")
-
-#trawl_counts_taxonomy <- trawl_joined %>% 
-  #filter(CommonName != "No catch",Family != "NA") %>% 
-  
-  #group_by(Location, year, Family) %>% 
-  #summarize(Count = sum(Count, na.rm = TRUE)) 
   
 ```
 
@@ -94,62 +89,80 @@ seine_tax <- seine %>%
 ### Totaling Counts by location, year, and Species
 
 ```{r}
+#total counts of each spps for each location for each year
 combo_trawl_counts <- combo_trawl %>% 
-  group_by(Location, year, CommonName) %>% 
-  summarize(Count = sum(Count, na.rm = TRUE)) %>% 
-  filter(CommonName != "No catch")
+  group_by(Location, year, CommonName) %>% #selecting location year and species
+  summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop") %>% #totaling the values in the counts column for each group
+  filter(CommonName != "No catch") #removing observationgs with no spp caught
 ```
 
 ```{r}
 seine_counts <- seine_tax %>% 
-  group_by(Location, year, OrganismCode) %>% 
-  summarize(Count = sum(Count, na.rm = TRUE)) %>% 
-  filter(OrganismCode != "NOFISH")
+  group_by(Location, year, OrganismCode) %>% #selecting location year and species
+  summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop") %>% #totaling the values in the counts column for each group
+  filter(OrganismCode != "NOFISH") #removing observationgs with no spp caught
 ```
 
 ### Totaling Counts of Unique Species In Seine Data
 
 ```{r}
+#grouping seine data counts for native status at each location and year
 seine_richness <- seine_tax %>% 
   select(Location, year, OrganismCode, CommonName.x, Family, NonNative) %>% 
   group_by(Location, year, OrganismCode, NonNative) %>% 
-  summarize(count = n()) %>% #creates a column that totals the columns of that loc, year, and organism
+  summarize(count = n(), .groups = "drop") %>% #creates a column that totals the columns of that loc, year, and organism
   filter(OrganismCode != "NOFISH") %>% 
   group_by(Location, year, NonNative) %>% 
-  summarize(count = n()) # allows us to total the unqiue number of organisms in each location each year seperated by native status
+  summarize(count = n(), .groups = "drop") # allows us to total the unqiue number of organisms in each location each year seperated by native status
 ```
 
-### Graphing time!
+## 1 - Trawl Abundance Counts
+
+### 1.1 Spps counts by location through time (trawl)
 
 ```{r}
+#plot that shows the counts of spps for each locaton through time
+#EXPLORITORY USE ONLY
 count_year <- ggplot(data = combo_trawl_counts, mapping = aes(x = year, y = Count)) +
   geom_point() +
   facet_wrap(Location ~ .) +
-  ylim(0,250000)
+  ylim(0,250000) #helps ignore a couple of outliers for visual scaling purposes
 
 count_year
 ```
 
+### 1.2a Counts of abundant spp through time (trawl)
+
 ```{r warning = FALSE, message = FALSE}
-count_species <- ggplot(data = combo_trawl_counts, mapping = aes(x = year, y = Count)) +
-  geom_point(aes(color= Location)) +
-  geom_line(aes(color= Location)) +
+#plot for visualzing the most abundant spps through time
+count_species <- combo_trawl_counts %>%
+  group_by(CommonName) %>%
+  filter(n() >= 50) %>% #only includes spps that were observed with more than 50 observations to help limit too many facets
+  ungroup() %>%
+  ggplot(aes(x = year, y = Count)) +
+  geom_point(aes(color = Location)) +
+  geom_line(aes(color = Location)) +
   facet_wrap(CommonName ~ ., scales = "free_y")
 
 count_species
 ```
 
-```{r warning = FALSE, message = FALSE}
-count_total <- ggplot(data = combo_trawl_counts, mapping = aes(x = year, y = Count)) +
-  geom_point(aes(color=CommonName)) +
-  geom_smooth(aes(color=CommonName)) +
-  ylim(0,100000)
-
-count_total
-```
+### 1.2b Counts of abundant families through time (trawl)
 
 ```{r warning = FALSE, message = FALSE}
-count_family <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y = Count)) +
+#EXPLORITIVE USE ONLY
+#creating a data table that organizes spps into phylogenic families
+trawl_counts_taxonomy <- trawl_joined %>% 
+  filter(CommonName.x != "No catch",Family != "NA") %>% 
+  group_by(Location, year, Family) %>% 
+  summarize(Count = sum(Count, na.rm = TRUE), .groups= "drop") 
+
+#creating plot that shows abundance of families through time
+count_family <- trawl_counts_taxonomy %>% 
+  group_by(Family) %>%
+  filter(n() >= 50) %>% #only includes families that were observed with more than 50 observations to help limit too many facets
+  ungroup() %>%
+  ggplot(aes(x = year, y = Count)) +
   geom_point(aes(color= Location)) +
   geom_line(aes(color= Location)) +
   facet_wrap(Family ~ ., scales = "free_y")
@@ -157,47 +170,32 @@ count_family <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y =
 count_family
 ```
 
-### Stacked Area
+### 1.3 Counts of abundance counts through time (trawl, locations merged)
 
 ```{r warning = FALSE, message = FALSE}
-count_area <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y = Count)) +
-  geom_area(aes(fill= Family)) +
-  facet_wrap(Location ~ ., scales = "free_y") +
-  scale_y_log10()
+#Counts of all spps through time (locations combined)
+#EXPLORITORY USE ONLY
+count_total <- ggplot(data = combo_trawl_counts, mapping = aes(x = year, y = Count)) +
+  geom_point(aes(color=CommonName)) +
+  geom_smooth(aes(color=CommonName)) +
+  ylim(0,100000) + #limiits outlier scaling issues
+  theme(legend.position = "none")
 
-count_area
-
+count_total
 ```
+
+### 1.4 Native vs Invasive
 
 ```{r warning = FALSE, message = FALSE}
-count_area2 <- ggplot(data = trawl_counts_taxonomy, mapping = aes(x = year, y = Count)) +
-  geom_area(aes(fill= Family)) +
-  scale_y_log10()
+#EXPLORATION USE ONLY
 
-count_area2
-
-```
-
-## Native vs Invasive
-
-```{r}
+#creating data frame that organizes into native status 
 native_trawl <- trawl_joined %>% 
-   filter(CommonName != "No catch",NonNative != "NA") %>%
+   filter(CommonName.x != "No catch", NonNative != "NA") %>% #removes any observations with no catch
   group_by(Location, year, Family, NonNative) %>% 
-  summarize(Count = sum(Count, na.rm = TRUE)) 
+  summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop") 
 
-```
-
-```{r}
-count_nonnative <- ggplot(data = native_trawl, mapping = aes(x = year, y = Count)) +
-  geom_point(aes(color=NonNative)) +
-  facet_wrap(Location ~ .) +
-  ylim(0,250000)
-
-count_nonnative
-```
-
-```{r warning = FALSE, message = FALSE}
+#creates a stacked area plot of abundances of native and non-native species, seperated by each location
 native_area <- ggplot(data = native_trawl, mapping = aes(x = year, y = Count)) +
   geom_area(aes(fill= NonNative)) +
   facet_wrap(Location ~ .) +
@@ -207,108 +205,53 @@ native_area
 
 ```
 
-## Seine Data Graphing
-
-### native non native
-
-```{r}
-ggplot()
-```
-
-## Trawl Data on Focal Species
+## 2 - Trawl Data on Focal Species
 
 look at how anchovies salmonids chinnok coorelate over time by location and by temperature.
 
-#### Organizing counts of focal salmonids per year by station
+### 2.1 Counts of focal salmonids per year 
 
 ```{r}
 #creating a filtered data table with counts of salmonids 
 focal_trawl_counts <- combo_trawl %>% 
-  filter(OrganismCode == "CHN"| OrganismCode ==  "CHO" | OrganismCode ==  "RBT") %>% 
+  filter(OrganismCode == "CHN"| OrganismCode ==  "RBT") %>% #filters for rows with chinook and steelhead
+  filter(StationCode == "SB018M" | 
+        StationCode == "SB018N" |
+        StationCode == "SB018S" | 
+        StationCode == "SB018X" |
+        StationCode == "SJ054M" |
+        StationCode == "SR055M") %>% #filters for the specific stations that have the most long term data
   group_by(StationCode, year, OrganismCode) %>% 
   summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop")
   
-```
-
-```{r}
-salmon_spp <- ggplot(data= focal_trawl_counts, aes(x = year, y = Count, fill = StationCode)) +
+#plot for abundance of chinook and steelhead, colored by station
+salmon_spp_station <- ggplot(data= focal_trawl_counts, aes(x = year, y = Count, fill = StationCode)) +
   geom_line(aes(color = StationCode)) +
   facet_wrap(OrganismCode ~., scales = "free_y")
 
-salmon_spp
-
-```
-
-```{r}
+#plot of abundance of chinook and steelhead, all stations combined
 salmon_spp <- ggplot(data= focal_trawl_counts, aes(x = year, y = Count )) +
   geom_line() +
   facet_wrap(OrganismCode ~., scales = "free_y")
 
-salmon_spp
-```
-
-```{r}
-salmon_loc <- ggplot(data= focal_trawl_counts, aes(x = year, y = Count, fill = OrganismCode)) +
-  geom_line(aes(color = OrganismCode)) +
-  facet_wrap(StationCode ~., scales = "free_y")
-
-salmon_loc
-```
-
-#### Organizing counts of focal salmonids per year by station (filtering by stations with abundant data)
-
-```{r}
-focal_filter <- combo_trawl %>% 
-  filter(OrganismCode == "CHN"| OrganismCode ==  "RBT") %>% 
-  filter(StationCode == "SB018M" | 
-        StationCode == "SB018N" |
-        StationCode == "SB018S" | 
-        StationCode == "SB018X" |
-        StationCode == "SJ054M" |
-        StationCode == "SR055M") %>% 
-  group_by(StationCode, year, OrganismCode) %>% 
-  summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop")
-  
-```
-
-```{r}
-salmon_spp_station <- ggplot(data= focal_filter, aes(x = year, y = Count, fill = StationCode)) +
-  geom_line(aes(color = StationCode)) +
-  facet_wrap(OrganismCode ~., scales = "free_y")
-
 salmon_spp_station
-
-```
-
-```{r}
-salmon_spp <- ggplot(data= focal_filter, aes(x = year, y = Count )) +
-  geom_line() +
-  facet_wrap(OrganismCode ~., scales = "free_y")
-
 salmon_spp
 ```
 
-```{r}
-salmon_loc_2 <- ggplot(data= focal_trawl_counts, aes(x = year, y = Count, fill = OrganismCode)) +
-  geom_line(aes(color = OrganismCode)) +
-  facet_wrap(StationCode ~., scales = "free_y")
-
-salmon_loc_2
-```
-
-#### Including watertemp?
+### 2.2 Counts of focal salmonids per year (water temp overlay)
 
 ```{r}
+#creating data frame that includes annual average water temperature 
 focal_filter2 <- combo_trawl %>% 
-  filter(OrganismCode == "CHN"| OrganismCode ==  "RBT") %>% 
+  filter(OrganismCode == "CHN"| OrganismCode ==  "RBT") %>% #filters for rows with chinook and steelhead
   filter(StationCode == "SB018M" | 
         StationCode == "SB018N" |
         StationCode == "SB018S" | 
         StationCode == "SB018X" |
         StationCode == "SJ054M" |
-        StationCode == "SR055M") %>% 
+        StationCode == "SR055M") %>% #filters for the specific stations that have the most long term data
   group_by(year) %>% 
-  mutate(avg_temp = mean(WaterTemp, na.rm = TRUE), .groups = "drop") %>% 
+  mutate(avg_temp = mean(WaterTemp, na.rm = TRUE), .groups = "drop") %>% #creating a mean on of temperature from all oberservatons that yar
   group_by(StationCode, year, OrganismCode, avg_temp) %>% 
   summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop")
 ```
@@ -331,12 +274,11 @@ salmon_spp_station <- ggplot(data= focal_filter2, aes(x = year, y = Count, color
   color = "Avg Temp (°C)"
 )
   
-
-
 salmon_spp_station
 ```
 
 ```{r}
+#export plot as a .png into the output folder
 ggsave(
   filename = "salmontemp.png",
   plot = salmon_spp_station,      # optional if it's the last plot
@@ -347,7 +289,10 @@ ggsave(
 )
 ```
 
+### 2.3 Abundances and Temp relationship (trawl)
+
 ```{r}
+#plot of relatiionship between salmon abundances and average annual temperature
 salmon_spp_station2 <- ggplot(data= focal_filter2, aes(x = avg_temp, y = Count)) +
   geom_point() +
   facet_wrap(OrganismCode ~., scales = "free_y") +
@@ -355,34 +300,32 @@ salmon_spp_station2 <- ggplot(data= focal_filter2, aes(x = avg_temp, y = Count))
 salmon_spp_station2
 ```
 
-#### now for flow
+### 2.4 Counts of focal salmonids per year (water flow overlay, trawl)
 
 ```{r}
+#creating data frame that includes annual average water flow 
 focal_filter_flow <- combo_trawl %>% 
-  filter(OrganismCode == "CHN"| OrganismCode ==  "RBT") %>% 
+  filter(OrganismCode == "CHN"| OrganismCode ==  "RBT") %>% #filters for rows with chinook and steelhead
   filter(StationCode == "SB018M" | 
         StationCode == "SB018N" |
         StationCode == "SB018S" | 
         StationCode == "SB018X" |
         StationCode == "SJ054M" |
-        StationCode == "SR055M") %>% 
+        StationCode == "SR055M") %>% #filters for the specific stations that have the most long term data
   group_by(year) %>% 
-  mutate(avg_flow = mean(FlowmeterDifference, na.rm = TRUE), .groups = "drop") %>% 
+  mutate(avg_flow = mean(FlowmeterDifference, na.rm = TRUE), .groups = "drop") %>% #creating a mean of flow from all oberservatons that year
   group_by(StationCode, year, OrganismCode, avg_flow) %>% 
   summarize(Count = sum(Count, na.rm = TRUE), .groups = "drop")
 ```
 
 ```{r}
+#plot for flow on salmon populations through time
 salmon_spp_station_flow <- ggplot(data= focal_filter_flow, aes(x = year, y = Count, color = avg_flow)) +
   geom_line() +
   scale_color_gradient(low = "blue", high = "red") +
   facet_wrap(OrganismCode ~., scales = "free_y")
 
-
 salmon_spp_station_flow
-```
-
-```         
 ```
 
 ### salmonids over years (thanks for the base code abbie!)

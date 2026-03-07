@@ -923,7 +923,7 @@ ggplot(annual_data, aes(x = Year, y = mean_OUT, fill = Y)) +
   geom_line(aes(y = count_scaled, color = "Annual Salmonid Abundance", group = 1), 
             linetype = "solid", color ="black", size = 1) +
   scale_y_continuous(
-    name = "Salmonid Abundance",
+    name = "Mean Annual Flow (cfs)",
     sec.axis = sec_axis(~ . / scale_factor_salmo,
                         name = "Annual Salmonid Abundance")
   ) +
@@ -989,8 +989,62 @@ summary(m.flow)
 ```
 
 
-Ok this is taking forever to run
+```{r}
+#Calculate daily abundance by site, not by species 
+daily_abundance <- salmonid_trawl %>%
+  group_by(StationCode, SampleDate) %>%
+  summarise(
+    salmon_abundance = sum(Count, na.rm = TRUE),
+    water_temp = mean(WaterTemp, na.rm = TRUE),
+    flow = first(OUT),
+    DOY = first (DOY),
+    season = first(season),
+    .groups = "drop"
+  )
 
-another approach?
+daily_abundance <- daily_abundance %>%
+  mutate(
+    flow_std = scale(flow),
+    temp_std = scale(water_temp)
+  )
+
+library(MASS)
+
+model_nb2 <- glm.nb(
+  salmon_abundance ~ flow_std + temp_std,
+  data = daily_abundance
+)
+
+summary(model_nb2)
+
+model_nb3 <- glm.nb(
+  salmon_abundance ~ flow_std + temp_std + DOY + season,
+  data = daily_abundance)
+  
+summary(model_nb3)
+
+library(mgcv)
+
+model_gam <- gam(
+  salmon_abundance ~ s(flow) + s(water_temp) + s(DOY),
+  family = nb(),
+  data = daily_abundance
+)
+
+summary(model_gam)
+
+plot(model_gam, pages = 1, shade = TRUE)
+
+
+brms_model <- brm(
+  salmon_abundance ~ s(flow) + s(water_temp) + s(DOY) + (1 | StationCode),
+  data = daily_abundance,
+  family = negbinomial(),
+  chains = 4,
+  cores = 4,
+  iter = 2000
+)
+
+```
 
 

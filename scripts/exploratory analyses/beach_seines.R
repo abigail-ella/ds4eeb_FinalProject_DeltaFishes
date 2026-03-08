@@ -885,7 +885,8 @@ fish_codes <-
            # remove records where Species is NA
            # but retains eg "Bass unidentified"
            Species != "<NA>") %>%
-    distinct(IEPFishCode)
+    distinct(IEPFishCode) %>% 
+  mutate(IEPFishCode = factor(IEPFishCode))
 
 # tidy data ----
 temp <-
@@ -1102,9 +1103,9 @@ ggplot(daily_cum,
   scale_color_viridis_c(option = "mako", direction = -1) +
   labs(x = "Day of Water Year",
        y = "Cumulative % of Annual Total",
-       title = "Juvenile Chinook Accumulation Curves") +
-  theme_bw() +
-  theme(legend.position = "none")
+       title = "Juvenile Chinook Accumulation Curves",
+       color = "water year") +
+  theme_bw()
 
 ## ID thresholds ----
 # day of water year when the 10%, 50% and 90% of total annual numbers are reached
@@ -1288,7 +1289,7 @@ ggplot(daily_cum,
   theme_bw()
 
 # analyses -----
-
+## temporal trends ----
 m.day10.wy <- 
   brm(data = percentile_days,
       # should be 'normal'...
@@ -1300,4 +1301,100 @@ m.day10.wy <-
       seed = 42,
       # save model output
       file = "m.day10.wy")
+
 summary(m.day10.wy)
+plot(m.day10.wy)
+
+# what's the probability that the slope for day_10 is <0?
+as_draws_df(m.day10.wy) %>% 
+  select(b_wy) %>% # brms prefixes coefficients with 'b_'
+  summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
+
+library(tidybayes)
+
+m.day10.wy %>%
+  spread_draws(b_wy) %>%
+  summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
+
+# our data provide very strong evidence that as wy (Water Year) increases, 
+# day_10 decreases: there is essentially "zero" posterior uncertainty that this 
+# relationship is negative. nice!
+
+# visualize posterior distribution of our slope (wy) using the bayesplot 
+# package 
+
+library(bayesplot)
+
+# plot the density of the 'wy' slope using the 'b_wy' that brms assigned internally
+
+mcmc_areas(m.day10.wy, 
+           pars = "b_wy", 
+           prob = 0.95) + 
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Posterior Distribution of Slope (wy)",
+       subtitle = "Red dashed line indicates zero (no effect)")
+
+# to visualize the uncertainty of our model, let's plot the "spaghetti" lines, 
+# the multiple possible regression lines from our posterior, alongside our 
+# original data points
+library(modelr) # for data_grid
+
+# first, create grid of 'wy' values to predict on top of
+percentile_days %>%
+  data_grid(wy = seq_range(wy, n = 100)) %>%
+  # now, extract 100 random lines from the posterior
+  add_epred_draws(m.day10.wy, ndraws = 100) %>%
+  # next, plot "spaghetti" lines
+  ggplot(aes(x = wy, y = day_10)) +
+  geom_line(aes(y = .epred, group = .draw), alpha = 0.1, color = "skyblue") +
+  # add the original data points on top
+  geom_point(data = percentile_days, color = "black", alpha = 0.6) +
+  # add the single "Best Fit" (Mean) line
+  geom_abline(intercept = 1724.15, slope = -0.81, color = "blue", size = 1) +
+  theme_bw() +
+  labs(title = "Model Fit: Water Year vs Day of 10% Annual Accumulation",
+       subtitle = "blue lines represent posterior uncertainty; points are observed data",
+       x = "Water Year",
+       y = "Day of the Water Year")
+
+## year type ----
+# first, add water year type to the percentile_days df
+wy_type <- 
+  read_excel("data/processed/cdec-water-year-type-jun-2025.xlsx") %>% 
+  mutate(wy = WY,
+         wyt = factor(WYT),
+         watershed = factor(Area),
+         .keep = "unused")
+
+# note that I'm using the df withOUT 1977
+pctl_days_wyt <-
+  wy_type %>% 
+  filter(watershed == "Sacramento Valley") %>% 
+  right_join(pctl_days_red,
+             by = "wy") %>% 
+  select(-watershed) %>% 
+  # specify order of the wyt levels
+  mutate(wyt = fct_relevel(wyt, "C", "D", "BN", "AN", "W"))
+
+m.day10.wy.wyt <-
+  brm(data = pctl_days_wyt, # df includes wyt, 1977 dropped
+      # normal distribution
+      family = gaussian,
+      # specify model, water year and water year type explanatory variables
+      wd ~ 0 + wy + wyt,
+      iter = 10000, warmup = 1000, chains = 4, cores = 4,
+      seed = 42,
+      # save the fitted model object as output
+      file = "m.day10.wy.wyt")
+
+summary(m.day10.wy.wyt)
+plot(m.day10.wy.wyt)
+
+pctl_days_wyt %>% 
+  filter(percentile == "day_10") %>% 
+  ggplot(aes(x = wyt, y = wd, group = wyt)) +
+  geom_boxplot() +
+  labs(title = "Timing of 10% Annual Accumulation Threshold",
+       x = "Water Year Type",
+       y = "Day of the Water Year") +
+  theme_bw()

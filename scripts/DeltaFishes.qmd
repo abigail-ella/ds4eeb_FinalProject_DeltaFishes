@@ -27,7 +27,7 @@ However, salmonid populations face pressure from changes to flow regimes, water 
 
 ### Report Objectives
 
-This assessment aims to evaluate the current state of juvenile salmonid abundances in the Sacramento–San Joaquin River Delta and how these abundances have changed over time as an effect of ecological parameters linked to water management practices. This report focuses specifically on key species such as steelhead and Chinook salmon which rely on the Delta as critical migratory and rearing habitat.
+This assessment aims to evaluate the current state of juvenile salmonid abundances in the Sacramento–San Joaquin River Delta and how these abundances have changed over time as an effect of ecological parameters linked to water management practices. This report focuses specifically on steelhead and Chinook salmon which rely on the Delta as critical migratory and rearing habitat.
 
 To conduct our analyses, we utilize long-term monitoring data from the Delta Juvenile Fish Monitoring Program (DJFMP). This dataset provides multi-decadal information on juvenile salmonid abundance, allowing for evaluation of temporal trends and potential relationships with flow, temperature, and other ecological parameters. Through this, the study seeks to better understand how water management strategies may influence salmonid population dynamics within the Delta and propose how water resource managers may better work in the Delta.
 
@@ -188,7 +188,7 @@ exp(-0.01571)
 100*(1-0.9844)
 ```
 
-Overall, we've seen a 1.56% decline in juvenile salmon abundances since 1976. Although there have been specific peaks throughout time, this general trend in the Delta is extremely concerning as a downward trend in juvenile abundance can give insight into how changes to climate and habitat have had long term negative effects. Because juvenile survival strongly influences adult return rates, sustained declines at this life stage can translate into reduced numbers of spawning adults in subsequent years. This trend is vital to understand as we begin to explore how water management strategies can uplift and boost these populations.
+Overall, we've seen a 1.56% decline in juvenile salmon abundances since 1976 despite millions of hatchery releases each year. Although there have been specific peaks throughout time, this general trend in the Delta is extremely concerning as a downward trend in juvenile abundance can give insight into how changes to climate and habitat have had long term negative effects. Because juvenile survival strongly influences adult return rates, sustained declines at this life stage can translate into reduced numbers of spawning adults in subsequent years. This trend is vital to understand as we begin to explore how water management strategies can uplift and boost these populations.
 
 #### Flow Rate Trends and Effects
 
@@ -460,7 +460,7 @@ Discuss decadal shifts over time– do an analysis to see if decades are sig dif
 
 #### Phenological Shifts
 
-The timing of juvenile Chinook outmigration differs among run types, but is also affected by environmental variables, particularly flow and temperature. As a result, the year-to-year differences in *when* these fish pass through the Delta is likely a reflection of the conditions that they experience. We explored the beach seine data from the Delta Juvenile Fish Monitoring Program with the objective of visualizing patterns in the phenology of juvenile outmigration. We limited the data we used to samples from October through December to match the seasonality of the FMWT sampling (see above), and we used data from the sites that appeared to be sampled most consistently from 1977 through 2025. We pooled all run types together in this analysis: The data do include run type categories based on LAD (length-at-date), but these designations are notoriously inaccurate and, because we focused on Fall and early Winter, the vast majority of the salmon included in these data were almost certainly Fall Run and early Fall run fish with few Winter and Spring Run Chinook among them. We tracked these counts over time by "day of water year", where day 0 was October 1 and day 365 (or 366) was September 30.
+The timing of juvenile Chinook outmigration differs among run types, but is also affected by environmental variables, particularly flow and temperature. As a result, the year-to-year differences in *when* these fish pass through the Delta is likely a reflection of the conditions that they experience. We explored the beach seine data from the Delta Juvenile Fish Monitoring Program with the objective of visualizing patterns in the phenology of juvenile outmigration. We limited the data we used to samples from October through December to match the seasonality of the FMWT sampling (see above), and we used data from the sites that appeared to be sampled most consistently from 1977 through 2025. We pooled all run types together in this analysis: The data do include run type categories based on LAD (length-at-date), but these designations are notoriously inaccurate and, because of the limited months during which the data we used were collected, the salmon included in these data were almost certainly Spring- Late Fall- and Winter-Run fish with few Fall-Run Chinook among them. We tracked these counts over time by "day of water year", where day 0 was October 1 and day 365 (or 366) was September 30.
 
 ##### Accumulation Curves
 
@@ -727,13 +727,86 @@ Run plots.
 # run the model plots for m.d_10.wy, m.d_50.wy, m.d_90.wy
 plot(m.d_10.wy)
 plot(m.d_50.wy)
-plot(m.d_90.wy)
+plot(m.d_90.wy) # less certain than the others
+
+# calc the prob that the slope is less than 0
+as_draws_df(m.d_10.wy) %>% 
+  select(b_wy) %>% # brms prefixes coefficients with 'b_'
+  summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
+# virtually certain!
+
+as_draws_df(m.d_50.wy) %>% 
+  select(b_wy) %>% # brms prefixes coefficients with 'b_'
+  summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
+
+as_draws_df(m.d_90.wy) %>% 
+  select(b_wy) %>% # brms prefixes coefficients with 'b_'
+  summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
+```
+
+##### Water Year Type
+
+Each year, the California Department of Water Resources determines a water year type, a category based on the flow, unaltered by anthropogenic action, for the Sacramento River watershed. A year may be Critical, Dry, Below Normal, Above Normal, or Wet. We attempted to determine if there was an effect of water year type on the timing of Chinook outmigration.
+
+```{r}
+## year type ----
+# first, add water year type to the percentile_days df
+wy_type <- 
+  read_excel("data/processed/cdec-water-year-type-jun-2025.xlsx") %>% 
+  mutate(wy = WY,
+         wyt = factor(WYT),
+         watershed = factor(Area),
+         .keep = "unused")
+
+# note that I'm using the df withOUT 1977
+pctl_days_wyt <-
+  wy_type %>% 
+  filter(watershed == "Sacramento Valley") %>% 
+  right_join(pctl_days_red,
+             by = "wy") %>% 
+  select(-watershed) %>% 
+  # specify order of the wyt levels
+  mutate(wyt = fct_relevel(wyt, "C", "D", "BN", "AN", "W"),
+         # center wy around the start of our data (1978)
+         wy_centered = wy - 1978) %>% 
+  relocate(wy_centered)
+
+# run wy + wyt model with the centered variable, 1977 not included
+m.day10.wy.wyt <- 
+  brm(data = pctl_days_wyt,
+      family = gaussian,
+      wd ~ 0 + wy_centered + wyt, 
+      iter = 10000, warmup = 1000, chains = 4, cores = 4, seed = 42,
+      # save fitted model (this one w the wy centered)
+      file = "m2.day10.wy.wyt"
+      )
+
+summary(m.day10.wy.wyt) 
+# fixed Rhat issue but the estimates for different year types are all over the place
+# and don't follow an ordered process and besides they all overlap considerably; the 
+# dry year types (C & D) are the earliest, but wet is the next soonest! I still wonder
+# if there is an interaction effect...
+
+plot(m.day10.wy.wyt)
+
+pctl_days_wyt %>% 
+  filter(percentile == "day_10") %>% 
+  ggplot(aes(x = wyt, y = wd, group = wyt)) +
+  geom_boxplot() +
+  labs(title = "Timing of 10% Annual Accumulation Threshold",
+       x = "Water Year Type",
+       y = "Day of the Water Year") +
+  theme_bw()
 ```
 
 ##### Timing Shifts
 
-The accumulation curves and the apparent downward trends in the accumulation thresholds suggest that juvenile Chinook are entering the Delta earlier each year.
+The accumulation curves and the apparent temporal trends in the accumulation thresholds–the initial 10% of each year's salmon come 0.44 days earlier each year–suggest that some broad scale factor or suite of factors is affecting migratory phenology. Surprisingly, there does not seem to be an effect of water year type: Based on analysis of the timing of the 10% threshold, the measure is reach earliest in Critical and Dry years, but the third earliest timing occurs during Wet years. The distribution of these posteriors, however, all overlap considerably and it does seem reasonable to suggest that more direct effects are operating than these basin-wide patterns.
 
 ### Discussion and Suggested Action
 
 How can these results be used in management decisions and policy changes...
+
+A major limitation to our study is the fact that sizable (millions) but unknown numbers of hatchery fry are released into the system every year. Furthermore, the timing and the location of these releases have largely gone unrecorded; there is no way to know when or where these fish were released and even attempt to avoid or reduced the chances that they were included in these data. California's Central Valley Constant Fractional Marking program, whereby roughly 25% of these hatchery fish were adipose-clipped and tagged with coded wire tags, was begun in 2007, but the numbers are inconsistent and unreported.
+
+Another challenge is the fact that genetic techniques are required to reliably distinguish between run types. Our data set includes run assignments based on length-at-date (LAD), but these are notoriously unreliable. Our focus on juveniles, captured during the fall and early winter, increases the likelihood that these fish are not fall-run and instead belong to one of the other four run types. It also increases the likelihood that these are wild-spawned and not hatchery-produced.

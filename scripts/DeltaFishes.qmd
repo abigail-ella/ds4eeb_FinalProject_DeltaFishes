@@ -362,7 +362,6 @@ ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
 From these long-term water temperature records, there seems to be a downward trend in overall temperature within the Delta. However, management actions through the State Water Resources Control Board (95-1WR, May 1995) defined actions and implemented policy changes to "minimize losses of salmon and steelhead due to flow fluctuation." This led to an influx of cold water into the Delta, coinciding with several wet water years in a row. These actions led to a decrease in overall temperature of the Delta compared to previously warmer conditions.
 
 ```{r}
-#| results: asis
 #| fig-cap: "Mean water temperature by year, 1995-2025"
 
 annual_water_temp %>% 
@@ -378,7 +377,7 @@ annual_water_temp %>%
   theme_bw()
 ```
 
-Now, however, we are beginning to trend back upward to warming temperatures. Recent years have seen particularly high peaks in mean Delta water temperatures, reaching above 18 degrees Celcius.
+Post these policy changes, however, we have seen a steady increase in water temperatures in the Delta, with temperatures reaching over 19C in some years. This warming is significantly important for juvenile salmonid rearing in this habitat who need cooler waters to survive and grow.
 
 ```{r}
 #| results: asis
@@ -394,7 +393,7 @@ ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
   theme_bw()
 ```
 
-The Delta exhibits strong seasonal variability in water temperature, driven by changes in air temperature, inflows, and hydrologic conditions throughout the year. During winter and early spring, temperatures tend to remain relatively cool as snowmelt and increased river flows enter the system. However, as summer progresses and flows decrease, water temperatures rise substantially across the Delta. This is incredibly important when considering juvenile fish migrations and the
+The Delta exhibits strong seasonal variability in water temperature, driven by changes in air temperature, inflows, and hydrologic conditions throughout the year. During winter and early spring, temperatures tend to remain relatively cool as snowmelt and increased river flows enter the system. However, as summer progresses and flows decrease, water temperatures rise substantially across the Delta. This is incredibly important when considering juvenile fish migration timing and water policy changes that may aid in both juvenile outmigration survival, adult spawning, and egg incubation.
 
 ```{r}
 #| fig-cap: "Water temperature (C) effects on juvenile salmon abundance"
@@ -410,7 +409,7 @@ ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
   theme_bw()
 ```
 
-Something about optimal water temp for juveniles and the effects of water temp even in dry years can lead to high abundance
+Juvenile salmon abundance has been shown to peak at optimal temperature ranges.
 
 ```{r}
 #| fig-cap: "Decadal shifts in Delta water temperature"

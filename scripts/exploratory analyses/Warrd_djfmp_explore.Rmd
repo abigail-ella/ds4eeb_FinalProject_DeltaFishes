@@ -1038,7 +1038,9 @@ m.flow.v.temp_year <-brm(
 )
 
 ```
+Ok so for m.flow.v.temp this model predicts salmon counts using nonlinear effects of flow, temperature, and season while accounting for differences among sampling stations.
 
+For m.flow.v.temp_year this model is the same as the first but also accounts for year-to-year variability in salmon abundance in addition to differences among stations.
 
 ```{r}
 summary(m.flow.v.temp)

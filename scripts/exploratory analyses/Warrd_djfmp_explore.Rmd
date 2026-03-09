@@ -974,22 +974,6 @@ And then look at effects over time.
 
 
 ```{r}
-library(brms)
-m.flow <- brm(
-  Count ~ log(OUT + 1) + (1 | SampleDate),
-  family = negbinomial(),
-  data = salmonid_trawl,
-  chains = 4, cores = 4, iter = 4000,
-  algorithm = 'fullrank'
-)
-```
-
-```{r}
-summary(m.flow)
-```
-
-
-```{r}
 #Calculate daily abundance by site, not by species 
 daily_abundance <- salmonid_trawl %>%
   group_by(StationCode, SampleDate) %>%
@@ -999,6 +983,7 @@ daily_abundance <- salmonid_trawl %>%
     flow = first(OUT),
     DOY = first (DOY),
     season = first(season),
+    year = first(year),
     .groups = "drop"
   )
 
@@ -1025,19 +1010,26 @@ summary(model_nb3)
 
 library(mgcv)
 
-model_gam <- gam(
+m.gam <- gam(
   salmon_abundance ~ s(flow) + s(water_temp) + s(DOY),
   family = nb(),
   data = daily_abundance
 )
 
-summary(model_gam)
-
-plot(model_gam, pages = 1, shade = TRUE)
+summary(m.gam)
 
 
-brms_model <- brm(
+m.flow.v.temp <- brm(
   salmon_abundance ~ s(flow) + s(water_temp) + s(DOY) + (1 | StationCode),
+  data = daily_abundance,
+  family = negbinomial(),
+  chains = 4,
+  cores = 4,
+  iter = 2000
+)
+
+m.flow.v.temp_year <-brm(
+  salmon_abundance ~ s(flow) + s(water_temp) + s(DOY) + (1|StationCode) + (1|year),
   data = daily_abundance,
   family = negbinomial(),
   chains = 4,
@@ -1047,4 +1039,21 @@ brms_model <- brm(
 
 ```
 
+
+```{r}
+summary(m.flow.v.temp)
+summary(m.flow.v.temp_year)
+
+plot(m.flow.v.temp)
+plot(m.flow.v.temp_year)
+```
+```{r}
+loo(m.flow.v.temp)
+loo(m.flow.v.temp_year)
+```
+
+```{r}
+conditional_smooths(m.flow.v.temp_year)
+
+```
 

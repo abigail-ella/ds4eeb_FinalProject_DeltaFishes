@@ -972,6 +972,7 @@ Neg. binomial because of overdispertion for turbity and flow? Ask Malin or Clavi
 
 And then look at effects over time.
 
+This is practicing a Generalized additive model in brms https://michael-franke.github.io/Bayesian-Regression/practice-sheets/10b-GAMs.html and https://uclpg-msc-sgds.github.io/GEOG0125/bayesian-generalised-additive-models-gams.html were helpful here 
 
 ```{r}
 #Calculate daily abundance by site, not by species 
@@ -993,50 +994,56 @@ daily_abundance <- daily_abundance %>%
     temp_std = scale(water_temp)
   )
 
-library(MASS)
+daily_abundance$log_flow <- log1p(daily_abundance$flow) #log1p to handle zeros? 
 
-model_nb2 <- glm.nb(
-  salmon_abundance ~ flow_std + temp_std,
-  data = daily_abundance
-)
-
-summary(model_nb2)
-
-model_nb3 <- glm.nb(
-  salmon_abundance ~ flow_std + temp_std + DOY + season,
-  data = daily_abundance)
-  
-summary(model_nb3)
-
-library(mgcv)
-
-m.gam <- gam(
-  salmon_abundance ~ s(flow) + s(water_temp) + s(DOY),
-  family = nb(),
-  data = daily_abundance
-)
-
-summary(m.gam)
+#To look at deafailt priors
+prior.list1 <- default_prior(salmon_abundance ~ s(log_flow) + s(water_temp) + s(DOY) + (1| StationCode), data = daily_abundance, family = negbinomial())
 
 
-m.flow.v.temp <- brm(
-  salmon_abundance ~ s(flow) + s(water_temp) + s(DOY) + (1 | StationCode),
+# start timer gauge how long it takes to run a GAM
+ptm <- proc.time()
+
+#Model to look at effects of temp and flow on salmon abundance factoring in difference in station
+m.flow.v.temp <- brm(bf(
+  salmon_abundance ~ 
+    s(log_flow, k = 5) + #the k parameters are to account for how much smoothing happens basically
+    s(water_temp, k = 5) +
+    s(DOY, k = 5) +
+    (1|StationCode)),
   data = daily_abundance,
   family = negbinomial(),
+  cores = 4, 
   chains = 4,
-  cores = 4,
-  iter = 2000
+  iter = 1000,
+  control = list(adapt_delta = 0.9)
 )
 
-m.flow.v.temp_year <-brm(
-  salmon_abundance ~ s(flow) + s(water_temp) + s(DOY) + (1|StationCode) + (1|year),
+# Stop the clock
+proc.time() - ptm
+
+#Look at priors for second model
+prior.list2 <- get_prior(salmon_abundance ~ s(log_flow) + s(water_temp) + s(DOY) + (1| StationCode) + (1| year), data = daily_abundance, family = negbinomial())
+
+# start timer gauge how long it takes to run a GAM
+ptm2 <- proc.time()
+
+#Model to look at effects of temp and flow on salmon abundance factoring in difference in station and year varibailty 
+m.flow.v.temp_year <- brm(bf(
+  salmon_abundance ~ 
+    s(log_flow, k = 5) +
+    s(water_temp, k = 5) +
+    s(DOY, k = 5) +
+    (1|StationCode) + (1|year)),
   data = daily_abundance,
   family = negbinomial(),
+  cores = 4, 
   chains = 4,
-  cores = 4,
-  iter = 2000
+  iter = 1000,
+  control = list(adapt_delta = 0.9)
 )
 
+# Stop the clock
+proc.time() - ptm2
 ```
 Ok so for m.flow.v.temp this model predicts salmon counts using nonlinear effects of flow, temperature, and season while accounting for differences among sampling stations.
 
@@ -1055,6 +1062,9 @@ loo(m.flow.v.temp_year)
 ```
 
 ```{r}
+conditional_smooths(m.flow.v.temp)
+
+
 conditional_smooths(m.flow.v.temp_year)
 
 ```

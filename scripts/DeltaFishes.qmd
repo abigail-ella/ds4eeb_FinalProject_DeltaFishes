@@ -192,64 +192,74 @@ exp(-0.01571)
 Overall, we've seen a 1.56% decline in juvenile salmon abundances since 1976 despite millions of hatchery releases each year. Although there have been specific peaks throughout time, this general trend in the Delta is extremely concerning as a downward trend in juvenile abundance can give insight into how changes to climate and habitat have had long term negative effects. Because juvenile survival strongly influences adult return rates, sustained declines at this life stage can translate into reduced numbers of spawning adults in subsequent years. This trend is vital to understand as we begin to explore how water management strategies can uplift and boost these populations.
 
 ```{r}
-#| fig-cap: "XXXXXX"
+#| fig-cap: "Relative abundance based on CPUE"
 #FIGURE 2
-
-# these data include only those events in which a salmon or steelhead was captured
-salmonids <- salmonid_trawl[, c(1:4, 8, 13, 14, 26, 31, 32, 33, 37, 39)] %>%
-  mutate(
-    across(c(Location:StationCode,OrganismCode,RaceByLength), as.factor),
-    date = mdy(SampleDate), 
-    .keep = "unused") %>% 
+trawls <- combo_trawl %>% 
+  mutate(across(c(Location:StationCode), as.factor),
+         date = SampleDate,
+         .keep = "unused") %>% 
   clean_names() %>% 
-  relocate(date, .after = station_code)
-
-# create new data frame w unique number for every unique combo station, date, time
-salmonids <-
-  salmonids %>% 
   group_by(date, sample_time, station_code) %>% 
   mutate(sample_id = cur_group_id()) %>% 
   ungroup() %>% 
-  relocate(sample_id, .after = sample_time)
+  relocate(date, .after = station_code)
 
-# chinook catch (summed across sizes, runs) for each sampling event
-chn_summary <- 
-  salmonids %>%
-  filter(organism_code == "CHN") %>% 
-  group_by(sample_id) %>%
-  summarise(catch = sum(count), .groups = "drop") %>%
-  left_join(
-    salmonids %>% 
-      dplyr::select(sample_id, location, region_code, station_code, date, water_temp, turbidity) %>% 
-      distinct(),
-    by = "sample_id"
-  ) %>% 
-  mutate(year = year(date),
-         month = month(date)) 
+temp <-
+  trawls %>% 
+  group_by(sample_id, organism_code) %>% 
+  summarise(total_count = sum(count, 
+                              na.rm = TRUE),
+            .groups = "drop") %>% 
+  pivot_wider(names_from = organism_code,
+              values_from = total_count,
+              values_fill = 0) %>% 
+  dplyr::select(sample_id, CHN, RBT) %>% 
+  ungroup()
+  
+# totals ----
+# totals for each unique trawl...
+trawl_sum <-
+  inner_join(trawls, temp, by = "sample_id") %>% 
+  dplyr::select(sample_id, CHN, RBT,
+                location, region_code, station_code, date, year, sample_time,
+                method_code, water_temp) %>% 
+  arrange(sample_id) %>% 
+  distinct()
 
-# steelhead catch (summed across sizes, runs) for each sampling event
-rbt_summary <- 
-  salmonids %>%
-  filter(organism_code == "RBT") %>% 
-  group_by(sample_id) %>%
-  summarise(catch = sum(count), .groups = "drop") %>%
-  left_join(
-    salmonids %>% 
-      dplyr::select(sample_id, location, region_code, station_code, date, water_temp, turbidity) %>% 
-      distinct(),
-    by = "sample_id"
-  ) %>% 
-  mutate(year = year(date),
-         month = month(date))
+# effort ----
+# control for effort (# of trawls)
 
-ggplot(chn_summary,
-       aes(x = as.factor(year), y = log(catch))) +
-  geom_boxplot() +
-  labs(title = "Chinook MWTR Counts",
-       x = "Year", y = "Counts (log n)")
-  theme_bw()
+trawl_indices <- 
+  trawl_sum %>% 
+  group_by(year) %>% 
+  summarise(total_chn = sum(CHN),
+            total_rbt = sum(RBT),
+            n = n(),
+            # index of abundance (total fish/number of trawls)
+            Chinook = sum(CHN)/n,
+            Steelhead = sum(RBT)/n) %>% 
+  pivot_longer(cols = c(Chinook, Steelhead),
+               names_to = "species",
+               values_to = "index")
+
+# plot ----
+ggplot(trawl_indices,
+       aes(x = year, y = index, color = species)) +
+  geom_point() +
+  geom_line() +
+  geom_smooth(method = "loess") +
+  facet_wrap(~ species, ncol = 1, scales = "free_y") +
+  labs(x = "Year", y = "Abundance Index", color = "Species") +
+  scale_color_manual(values = c(
+    "Chinook" = "steelblue",
+    "Steelhead" = "darkorange"
+  )) +
+  theme_minimal()
+
 
 ```
+
+When factoring catch per unit effort based on the number of trawls per sampling site, we see an ever sharper decline in abundance over time (Fig. 2). Relative abundance of steelhead has remained significantly smaller than Chinook salmon, however, comparatively, Chinook have been trending sharply downward over time despite the amount of trawling effort. Yet, for all salmonid species, we see fewer fish detected over per unit sampling effort over time.
 
 #### Flow Rate Trends and Effects
 
@@ -358,19 +368,22 @@ ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
   theme_bw()
 ```
 
-Over the past several decades, we've seen increasingly drier conditions and a reduction in overall water availability. These conditions have severe consequences for juvenile salmonids who rely on freshwater flows through the Delta. This long-term monitoring has suggested that average flows through the Delta have trended downward over time (Fig.3). We also have see drier conditions in the Sacramento River System as a whole, with an increase in "Dry" and "Critical" years since 2000 (Fig. 2).
+Over the past several decades, we've seen increasingly drier conditions and a reduction in overall water availability. These conditions have severe consequences for juvenile salmonids who rely on freshwater flows through the Delta. This long-term monitoring has suggested that average flows through the Delta have trended downward over time (Fig. 4). We also have see drier conditions in the Sacramento River System as a whole, with an increase in "Dry" and "Critical" years since 2000 (Fig. 3).
 
 However, even in years classified as "Above Normal", the amount of water flowing out of the Delta can remain relatively low due to upstream storage, diversions, and exports to Southern California, agriculture and the Bay area (Fig. 2). This means that the ecological benefits of wetter years are not always fully realized within the Delta ecosystem or by the species within. Water management decisions during these times, then, become critical to sustaining populations and shaping the ecological conditions of the Delta.
 
 ```{r}
 #| fig-cap: "Daily salmonid abundance as a function of flow"
 
+#Log flow to scale
+salmonid_trawl$log_flow <- log1p(salmonid_trawl$OUT) #log1p to handle zeros
+
 #FIGURE 5
-ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
+ggplot(salmonid_trawl, aes(x = log_flow, y = Count, color = Y)) +
   geom_point()  +
   scale_color_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
   labs(
-    x = "Daily Flow (cfs)",
+    x = expression(log[10](Flow)),
     y = "Daily Abundance Count"
   ) +
   theme_bw()
@@ -380,21 +393,19 @@ ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
 ```{r}
 #| include: false
 
-#Model looking at the effects of flow on daily salmon abundance 
-m.flow <- brm(
-  Count ~ log(OUT + 1),
-  family = negbinomial(),
-  data = salmonid_trawl,
-  chains = 4, cores = 4, iter = 4000,
-  algorithm = 'fullrank'
-)
+#Model looking at the effects of flow on daily salmon abundance using a generalized additive model since non-linear effects 
+library(mgcv)
+
+m.flow <- gam(Count ~ s(log_flow),
+              data = salmonid_trawl,
+              family = nb())
 ```
 
 ```{r}
 summary(m.flow)
 ```
 
-Discuss here about how daily flows and water years effect abundance, discuss the model, etc...
+Flow appears to influence salmonid abundance, with juvenile salmon showing higher counts within a certain range of flows (Fig. 5). This is well-known within salmonid ecology, that flows directly influence juvenile salmon health and abundance. To better understand this relationship, we fit a generalized additive model (GAM) to account for non linearity within the relationship, using a negative binomial distribution to account for overdispertion within the data. The smooth term (indicated by edf) for log(flow) was highly significant which indicates a strong non-linear relationship between flow and abundance, but this model only explained 2.93% of the variability within our data. This points towards focus on other factors leading to the variability within abundance we see within our data.
 
 #### Temperature Trends and Effects
 
@@ -421,7 +432,7 @@ ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
   theme_bw()
 ```
 
-From these long-term water temperature records, there seems to be a downward trend in overall temperature within the Delta. However, management actions through the State Water Resources Control Board (95-1WR, May 1995) defined actions and implemented policy changes to "minimize losses of salmon and steelhead due to flow fluctuation." This led to an influx of cold water into the Delta, coinciding with several wet water years in a row. These actions led to a decrease in overall temperature of the Delta compared to previously warmer conditions.
+Temperature From these long-term water temperature records, there seems to be a downward trend in overall temperature within the Delta (Fig. 6). However, management actions through the State Water Resources Control Board (95-1WR, May 1995) defined actions and implemented policy changes to "minimize losses of salmon and steelhead due to flow fluctuation." This led to an influx of cold water into the Delta, coinciding with several wet water years in a row. These actions led to a decrease in overall temperature of the Delta compared to previously warmer conditions.
 
 ```{r}
 #| fig-cap: "Mean water temperature by year, 1995-2025"

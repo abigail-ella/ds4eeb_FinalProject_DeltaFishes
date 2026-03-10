@@ -1306,10 +1306,6 @@ summary(m.day10.wy)
 plot(m.day10.wy)
 
 # what's the probability that the slope for day_10 is <0?
-as_draws_df(m.day10.wy) %>% 
-  select(b_wy) %>% # brms prefixes coefficients with 'b_'
-  summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
-
 library(tidybayes)
 
 m.day10.wy %>%
@@ -1372,7 +1368,7 @@ pctl_days_wyt <-
   filter(watershed == "Sacramento Valley") %>% 
   right_join(pctl_days_red,
              by = "wy") %>% 
-  select(-watershed) %>% 
+  dplyr::select(-watershed) %>% 
   # specify order of the wyt levels
   mutate(wyt = fct_relevel(wyt, "C", "D", "BN", "AN", "W"))
 
@@ -1390,6 +1386,7 @@ m.day10.wy.wyt <-
 summary(m.day10.wy.wyt)
 plot(m.day10.wy.wyt)
 
+### wy boxplot -----
 pctl_days_wyt %>% 
   filter(percentile == "day_10") %>% 
   ggplot(aes(x = wyt, y = wd, group = wyt)) +
@@ -1398,3 +1395,55 @@ pctl_days_wyt %>%
        x = "Water Year Type",
        y = "Day of the Water Year") +
   theme_bw()
+
+### m2 ----
+# first, add water year type to the percentile_days df
+# note that I'm using the df withOUT 1977
+
+# water year is centered...
+pctl_days_wyt <-
+  wy_type %>% 
+  filter(watershed == "Sacramento Valley") %>% 
+  right_join(pctl_days_red,
+             by = "wy") %>% 
+  dplyr::select(-watershed) %>% 
+  # specify order of the wyt levels
+  mutate(wyt = fct_relevel(wyt, "C", "D", "BN", "AN", "W"),
+         # center wy around the start of our data (1978)
+         wy_centered = wy - 1978) %>% 
+  relocate(wy_centered)
+
+write_rds(pctl_days_wyt, 
+          here("data", "processed", "pctl_days_wyt.rds"))
+
+# run wy + wyt model with the centered variable, 1977 not included
+m2.day10.wy.wyt <- 
+  brm(data = pctl_days_wyt,
+      family = gaussian,
+      wd ~ 0 + wy_centered + wyt, 
+      iter = 10000, warmup = 1000, chains = 4, cores = 4, seed = 42,
+      # save fitted model (this one w the wy centered)
+      file = here("data", "processed", "m2.day10.wy.wyt")
+  )
+
+summary(m2.day10.wy.wyt) 
+# fixed Rhat issue but the estimates for different year types are all over the place
+# and don't follow an ordered process and besides they all overlap considerably; the 
+# dry year types (C & D) are the earliest, but wet is the next soonest! I still wonder
+# if there is an interaction effect...
+
+plot(m2.day10.wy.wyt)
+
+### m3 ----
+# run wy * wyt model with the centered variable, 1977 not included
+m3.day10.wy.wyt <- 
+  brm(data = pctl_days_wyt,
+      family = gaussian,
+      wd ~ 0 + wy_centered * wyt, 
+      iter = 10000, warmup = 1000, chains = 4, cores = 4, seed = 42,
+      # save fitted model (this one w the wy centered)
+      file = here("data", "processed", "m3.day10.wy.wyt")
+  )
+
+summary(m3.day10.wy.wyt)
+plot(m3.day10.wy.wyt)

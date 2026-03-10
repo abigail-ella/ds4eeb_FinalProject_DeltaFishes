@@ -1,6 +1,6 @@
 ---
 title: "Long term water quality effects on juvenile salmon abundance in the Sacramento San-Joaquin River Delta"
-author: "Peter Nelson, Ambrosio Rivera, Abigail Ward, Walt Vance"
+author: "Abigail Ward, Ambrosio Rivera, Walt Vance, Peter Nelson"
 format:
  pdf: default
 editor: visual
@@ -58,6 +58,7 @@ library(dataRetrieval)
 remotes::install_github("doi-usgs/EflowStats@v5.2.0")
 library(EflowStats)
 library(fishualize)
+library(tidybayes)
 ```
 
 ```{r}
@@ -661,97 +662,82 @@ pctl_days %>%
   theme_bw()
 ```
 
-Run the model, *day of the water year as a function of water year*. The day 10% of the total salmon observed for the year.
+The figure above shows that, over time (1987-2025), all three thresholds are reached earlier and earlier. To explore this relationship, we modeled the timing for each benchmark (10, 50 and 90% of each year's total outmigrants) as a function of the water year.
 
 ```{r}
-m.d_10.wy <- 
-  brm(data = percentile_days, #Givethemodel the percentile_days data
-      # Choose agaussian(normal)distribution
+#| include: false
+
+# reaching the 10% benchmark
+m.day10.wy <- 
+  brm(data = percentile_days, # use the percentile_days data
+      # use a gaussian (normal) distribution
       family= gaussian,
-      # Specify the modelhere.
-      day_10 ~ 1+ wy,
-      # Here's where you specify parameters for executing the Markovchains
-      # We'reusing similartothedefaults,except we set cores to 4 so the analys is runs fasterthanthedefaultof1
+      # specify the model
+      day_10 ~ 1 + wy,
+      # specify parameters for executing the Markov chains
       iter = 2000, warmup= 1000, chains= 4, cores=4,
-      # Setting the "seed"determines which randomnumbers will get sampled.
-      # In this case, it makes the randomness of the Markovchain runs reproducible
-      # (so that both of us get the exact same results when running the model)
+      # setting the "seed" determines which randomnumbers will get sampled
+      # so that team gets the same results when running the model
       seed = 4)
 
-summary(m.d_10.wy)
+# reaching the 50% benchmark
+m.day50.wy <- 
+  brm(data = percentile_days, 
+      # Choose a gaussian (normal) distribution
+      family= gaussian,
+      day_50 ~ 1 + wy,
+      iter = 2000, warmup = 1000, chains = 4, cores = 4,
+      seed = 4)
+
+# reaching the 90% benchmark
+m.day90.wy <- 
+  brm(data = percentile_days, 
+      family= gaussian,
+      day_90 ~ 1 + wy,
+      iter = 2000, warmup = 1000, chains = 4, cores =4,
+      seed = 4)
 ```
 
-Run the model, *day of the water year as a function of water year*. The day 50% of the total salmon observed for the year.
+Model summaries:
 
 ```{r}
-m.d_50.wy <- 
-  brm(data = percentile_days, #Givethemodel the percentile_days data
-      # Choose agaussian(normal)distribution
-      family= gaussian,
-      # Specify the modelhere.
-      day_50 ~ 1+ wy,
-      # Here's where you specify parameters for executing the Markovchains
-      # We'reusing similartothedefaults,except we set cores to 4 so the analys is runs fasterthanthedefaultof1
-      iter = 2000, warmup= 1000, chains= 4, cores=4,
-      # Setting the "seed"determines which randomnumbers will get sampled.
-      # In this case, it makes the randomness of the Markovchain runs reproducible
-      # (so that both of us get the exact same results when running the model)
-      seed = 4)
-    
-summary(m.d_50.wy)
+summary(m.day10.wy)
+summary(m.day50.wy)
+summary(m.day90.wy)
 ```
 
-Run the model, *day of the water year as a function of water year*. The day 90% of the total salmon observed for the year.
-
-```{r}
-m.d_90.wy <- 
-  brm(data = percentile_days, #Givethemodel the percentile_days data
-      # Choose agaussian(normal)distribution
-      family= gaussian,
-      # Specify the modelhere.
-      day_90 ~ 1+ wy,
-      # Here's where you specify parameters for executing the Markovchains
-      # We'reusing similartothedefaults,except we set cores to 4 so the analys is runs fasterthanthedefaultof1
-      iter = 2000, warmup= 1000, chains= 4, cores=4,
-      # Setting the "seed"determines which randomnumbers will get sampled.
-      # In this case, it makes the randomness of the Markovchain runs reproducible
-      # (so that both of us get the exact same results when running the model)
-      seed = 4)
-
-summary(m.d_90.wy)
-```
-
-Run plots.
+To see how well these models performed and to determine the probability of a temporal effect, we plotted model performance and calculated the probabilities that the slope for each linear model differed from 0:
 
 ```{r}
 #| fig-cap: "Model Plots for Year-Effect on 10, 50 & 90% Thresholds"
 
 # run the model plots for m.d_10.wy, m.d_50.wy, m.d_90.wy
-plot(m.d_10.wy)
-plot(m.d_50.wy)
-plot(m.d_90.wy) # less certain than the others
+plot(m.day10.wy)
+plot(m.day50.wy)
+plot(m.day90.wy) # less certain than the others
 
 # calc the prob that the slope is less than 0
-as_draws_df(m.d_10.wy) %>% 
-  select(b_wy) %>% # brms prefixes coefficients with 'b_'
+m.day10.wy %>%
+  spread_draws(b_wy) %>%
   summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
 # virtually certain!
 
-as_draws_df(m.d_50.wy) %>% 
-  select(b_wy) %>% # brms prefixes coefficients with 'b_'
+m.day50.wy %>%
+  spread_draws(b_wy) %>%
   summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
 
-as_draws_df(m.d_90.wy) %>% 
-  select(b_wy) %>% # brms prefixes coefficients with 'b_'
+m.day90.wy %>%
+  spread_draws(b_wy) %>%
   summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
 ```
 
 ##### Water Year Type
 
-Each year, the California Department of Water Resources determines a water year type, a category based on the flow, unaltered by anthropogenic action, for the Sacramento River watershed. A year may be Critical, Dry, Below Normal, Above Normal, or Wet. We attempted to determine if there was an effect of water year type on the timing of Chinook outmigration.
+We attempted to determine if there was an effect of water year type on the timing of Chinook outmigration. Environmental conditions vary from one year to the next, and a widely used metric for categorizing water availability for a water year is the Water Year Type: Each year, the California Department of Water Resources determines a water year type, a category based on the flow, unaltered by anthropogenic action, for the Sacramento River watershed. A year may be Critical, Dry, Below Normal, Above Normal, or Wet. We tested a model that included both Water Year and Water Year *Type* as explanatory factors:
 
 ```{r}
-#| fig-cap: "Plot Year and Year Type model output"
+#| include: false
+
 ## year type ----
 # first, add water year type to the percentile_days df
 wy_type <- 
@@ -775,28 +761,31 @@ pctl_days_wyt <-
   relocate(wy_centered)
 
 # run wy + wyt model with the centered variable, 1977 not included
-m.day10.wy.wyt <- 
+m2.day10.wy.wyt <- 
   brm(data = pctl_days_wyt,
       family = gaussian,
       wd ~ 0 + wy_centered + wyt, 
       iter = 10000, warmup = 1000, chains = 4, cores = 4, seed = 42,
       # save fitted model (this one w the wy centered)
-      file = here("data", "processed", "Pete_local_data", "m2.day10.wy.wyt")
+      file = here("data", "processed", "m2.day10.wy.wyt")
       )
 
-summary(m.day10.wy.wyt) 
+```
+
+Model summary and performance:
+
+```{r}
+summary(m2.day10.wy.wyt) 
 # fixed Rhat issue but the estimates for different year types are all over the place
 # and don't follow an ordered process and besides they all overlap considerably; the 
 # dry year types (C & D) are the earliest, but wet is the next soonest! I still wonder
 # if there is an interaction effect...
 
-plot(m.day10.wy.wyt)
-
-
+plot(m2.day10.wy.wyt)
 ```
 
 ```{r}
-#| fig-cap: "Does Water Year Type Affect Outmigration Timing"
+#| fig-cap: "Does Water Year Type Affect Outmigration Timing?"
 
 pctl_days_wyt %>% 
   filter(percentile == "day_10") %>% 

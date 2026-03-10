@@ -1,0 +1,56 @@
+---
+title: "test"
+author: "Pete"
+format: pdf
+editor: visual
+---
+
+## test
+
+I want to run a model in a code chunk, but don't want the model output to be rendered. I do want the model summary to be rendered. How?
+
+```{r}
+#| include: false
+
+library(brms)
+library(here)
+library(tidyverse)
+
+my_priors <- c(
+  # Intercept: The migration day when 10% have migrated for the average year.
+  # Day 130 is late January/early February. 
+  # A wide SD of 50 allows for a large range of seasonal timing.
+  prior(normal(110, 40), class = "Intercept"), 
+  
+  # Prior for the Year Slope (how much it changes annually)
+  # Center on 0 (assuming no trend) with an SD of 2 (unlikely to shift >2 days/year)
+  prior(normal(0, 2), class = "b", coef = "wy_centered"),
+  
+  # Prior for the Residual Error (standard deviation of the model)
+  prior(student_t(3, 0, 20), class = "sigma")
+)
+
+pctl_days_wyt <- read_rds(here("data", "processed", "pctl_days_wyt.rds"))
+
+m2.day10.wy <- 
+  brm(data = pctl_days_wyt, # use the percentile_days data
+      # use a gaussian (normal) distribution
+      family = gaussian,
+      # specify the model
+      wd ~ 1 + wy_centered,
+      prior = my_priors,
+      # specify parameters for executing the Markov chains
+      iter = 2000, warmup= 1000, chains= 4, cores=4,
+      # setting the "seed" determines which randomnumbers will get sampled
+      # so that team gets the same results when running the model
+      seed = 4)
+
+
+plot(m2.day10.wy)
+```
+
+...but I *do* want the model summary to print.
+
+```{r}
+summary(m2.day10.wy)
+```

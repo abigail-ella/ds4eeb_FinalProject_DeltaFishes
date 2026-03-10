@@ -191,6 +191,66 @@ exp(-0.01571)
 
 Overall, we've seen a 1.56% decline in juvenile salmon abundances since 1976 despite millions of hatchery releases each year. Although there have been specific peaks throughout time, this general trend in the Delta is extremely concerning as a downward trend in juvenile abundance can give insight into how changes to climate and habitat have had long term negative effects. Because juvenile survival strongly influences adult return rates, sustained declines at this life stage can translate into reduced numbers of spawning adults in subsequent years. This trend is vital to understand as we begin to explore how water management strategies can uplift and boost these populations.
 
+```{r}
+#| fig-cap: "XXXXXX"
+#FIGURE 2
+
+# these data include only those events in which a salmon or steelhead was captured
+salmonids <- salmonid_trawl[, c(1:4, 8, 13, 14, 26, 31, 32, 33, 37, 39)] %>%
+  mutate(
+    across(c(Location:StationCode,OrganismCode,RaceByLength), as.factor),
+    date = mdy(SampleDate), 
+    .keep = "unused") %>% 
+  clean_names() %>% 
+  relocate(date, .after = station_code)
+
+# create new data frame w unique number for every unique combo station, date, time
+salmonids <-
+  salmonids %>% 
+  group_by(date, sample_time, station_code) %>% 
+  mutate(sample_id = cur_group_id()) %>% 
+  ungroup() %>% 
+  relocate(sample_id, .after = sample_time)
+
+# chinook catch (summed across sizes, runs) for each sampling event
+chn_summary <- 
+  salmonids %>%
+  filter(organism_code == "CHN") %>% 
+  group_by(sample_id) %>%
+  summarise(catch = sum(count), .groups = "drop") %>%
+  left_join(
+    salmonids %>% 
+      dplyr::select(sample_id, location, region_code, station_code, date, water_temp, turbidity) %>% 
+      distinct(),
+    by = "sample_id"
+  ) %>% 
+  mutate(year = year(date),
+         month = month(date)) 
+
+# steelhead catch (summed across sizes, runs) for each sampling event
+rbt_summary <- 
+  salmonids %>%
+  filter(organism_code == "RBT") %>% 
+  group_by(sample_id) %>%
+  summarise(catch = sum(count), .groups = "drop") %>%
+  left_join(
+    salmonids %>% 
+      dplyr::select(sample_id, location, region_code, station_code, date, water_temp, turbidity) %>% 
+      distinct(),
+    by = "sample_id"
+  ) %>% 
+  mutate(year = year(date),
+         month = month(date))
+
+ggplot(chn_summary,
+       aes(x = as.factor(year), y = log(catch))) +
+  geom_boxplot() +
+  labs(title = "Chinook MWTR Counts",
+       x = "Year", y = "Counts (log n)")
+  theme_bw()
+
+```
+
 #### Flow Rate Trends and Effects
 
 ```{r}
@@ -258,6 +318,7 @@ salmonid_trawl <- salmonid_trawl %>%
 ```{r}
 #| fig-cap: "Mean annual flow by water year type"
 
+#FIGURE 3
 #annual flow for Delta
 annual_flow <- allflow %>%
   group_by(Year, Y) %>%                               
@@ -266,7 +327,7 @@ annual_flow <- allflow %>%
     .groups = "drop"
   )
 
-#Figure 2
+#Make annual flow figure
 ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
   geom_col(alpha = 0.8) +
   scale_fill_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
@@ -286,7 +347,7 @@ ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
 ```{r}
 #| fig-cap: "Linear trend of annual flow"
 
-#Figure 3
+#FIGURE 4
 ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
   geom_line(alpha = 0.3) +           
   geom_smooth(method = "lm") + 
@@ -304,7 +365,7 @@ However, even in years classified as "Above Normal", the amount of water flowing
 ```{r}
 #| fig-cap: "Daily salmonid abundance as a function of flow"
 
-#Figure 4
+#FIGURE 5
 ggplot(salmonid_trawl, aes(x = OUT, y = Count, color = Y)) +
   geom_point()  +
   scale_color_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
@@ -338,9 +399,9 @@ Discuss here about how daily flows and water years effect abundance, discuss the
 #### Temperature Trends and Effects
 
 ```{r}
-#| results: asis
 #| fig-cap: "Mean water temperature by year"
 
+#FIGURE 6
 #Calculaating annual water temp 
 annual_water_temp <- combo_trawl %>%
   group_by(year) %>%
@@ -348,7 +409,7 @@ annual_water_temp <- combo_trawl %>%
     mean_temp = mean(WaterTemp, na.rm = TRUE)
   )
 
-#Figure 5
+#Figure 6
 ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
   geom_line(color = "firebrick", size = 1) +
   geom_smooth(method = "lm", se = TRUE, color = "black") +
@@ -365,6 +426,7 @@ From these long-term water temperature records, there seems to be a downward tre
 ```{r}
 #| fig-cap: "Mean water temperature by year, 1995-2025"
 
+#FIGURE 7
 annual_water_temp %>% 
   filter(year > 1995) %>% 
   ggplot(aes(x = year, y = mean_temp)) +
@@ -381,10 +443,9 @@ annual_water_temp %>%
 Post these policy changes, however, we have seen a steady increase in water temperatures in the Delta, with temperatures reaching over 19C in some years. This warming is significantly important for juvenile salmonid rearing in this habitat who need cooler waters to survive and grow.
 
 ```{r}
-#| results: asis
 #| fig-cap: "Delta mean monthly water temperature"
 
-#Figure 6
+#Figure 8
 ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
   geom_boxplot(fill = "skyblue", alpha = 0.7) +
   labs(
@@ -399,7 +460,7 @@ The Delta exhibits strong seasonal variability in water temperature, driven by c
 ```{r}
 #| fig-cap: "Water temperature (C) effects on juvenile salmon abundance"
 
-#Figure 7
+#Figure 9
 ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
   geom_point(alpha = 0.8) + 
   scale_color_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
@@ -414,6 +475,8 @@ Juvenile salmon abundance has been shown to peak at optimal temperature ranges.
 
 ```{r}
 #| fig-cap: "Decadal shifts in Delta water temperature"
+
+#FIGURE 10
 
 #Changing the sample date column to recognize as date
 combo_trawl$SampleDate <- as.Date(combo_trawl$SampleDate, format = "%m/%d/%Y")
@@ -430,7 +493,7 @@ daily_water_temp <- combo_trawl %>%
     .groups = "drop"
   )
 
-#Figure 8
+#Plotting water temp over time shifts
 ggplot(daily_water_temp, aes(DOY, mean_temp, group = year)) +
   geom_line(color = "gray70", alpha = 0.5) +
   geom_line(
@@ -470,6 +533,8 @@ The figure below shows the year-to-year differences in the timing and the pace a
 
 ```{r}
 #| fig-cap: "Juvenile Chinook Accumulation Curves"
+
+#FIGURE 11
 
 #Load in Data
 beachsieneALL <- read_csv(here("data", "processed", "seine_76_25.csv"))
@@ -609,6 +674,8 @@ To examine the year-to-year differences more closely, we set 10%, 50% and 90% ac
 ```{r}
 #| fig-cap: "Day of the Water Year for each Threshold (10, 50, 90%)"
 
+#FIGURE 12
+
 ## ID thresholds ----
 # day of water year when the 10%, 50% and 90% of total annual numbers are reached
 
@@ -711,6 +778,8 @@ To see how well these models performed and to determine the probability of a tem
 ```{r}
 #| fig-cap: "Model Plots for Year-Effect on 10, 50 & 90% Thresholds"
 
+#FIGURE 13
+
 # run the model plots for m.d_10.wy, m.d_50.wy, m.d_90.wy
 plot(m.day10.wy)
 plot(m.day50.wy)
@@ -786,6 +855,8 @@ plot(m2.day10.wy.wyt)
 
 ```{r}
 #| fig-cap: "Does Water Year Type Affect Outmigration Timing?"
+
+#FIGURE 14
 
 pctl_days_wyt %>% 
   filter(percentile == "day_10") %>% 

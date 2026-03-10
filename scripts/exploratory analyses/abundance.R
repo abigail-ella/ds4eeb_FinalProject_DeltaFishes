@@ -4,7 +4,7 @@
 # added unique 'sample_code'
 trawls <- combo_trawl %>% 
   mutate(across(c(Location:StationCode), as.factor),
-         date = mdy(SampleDate),
+         date = SampleDate,
          .keep = "unused") %>% 
   clean_names() %>% 
   group_by(date, sample_time, station_code) %>% 
@@ -29,7 +29,7 @@ temp <-
 trawl_sum <-
   inner_join(trawls, temp, by = "sample_id") %>% 
   dplyr::select(sample_id, CHN, RBT,
-                location, region_code, station_code, date, sample_time,
+                location, region_code, station_code, date, year, sample_time,
                 method_code, water_temp) %>% 
   arrange(sample_id) %>% 
   distinct()
@@ -39,7 +39,6 @@ trawl_sum <-
 
 trawl_indices <- 
   trawl_sum %>% 
-  mutate(year = year(date)) %>% 
   group_by(year) %>% 
   summarise(total_chn = sum(CHN),
             total_rbt = sum(RBT),
@@ -63,7 +62,7 @@ ggplot(trawl_indices,
 # 'salmonid_trawl' from Abbie's code (see DeltaFishes.qmd)
 # these data include only those events in which a salmon or steelhead was captured
 
-salmonids <- salmonid_trawl[, c(1:4, 8, 13, 14, 25, 31, 32, 37, 39)] %>%
+salmonids <- salmonid_trawl[, c(1:4, 8, 13, 14, 26, 31, 32, 33, 37, 39)] %>%
   mutate(
     across(c(Location:StationCode,OrganismCode,RaceByLength), as.factor),
     date = mdy(SampleDate), 

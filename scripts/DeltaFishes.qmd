@@ -30,9 +30,9 @@ This assessment aims to evaluate the current state of juvenile salmonid abundanc
 
 To conduct our analyses, we utilize long-term monitoring data from the Delta Juvenile Fish Monitoring Program (DJFMP). This dataset provides multi-decadal information on juvenile salmonid abundance, allowing for evaluation of temporal trends and potential relationships with flow, temperature, and other ecological parameters. Through this, the study seeks to better understand how water management strategies may influence salmonid population dynamics within the Delta and propose how water resource managers may better work in the Delta.
 
-### Results
+### Section 1  - Environmental Effects on Abundance 
 
-#### Salmonid Abundance
+#### 1.1 Salmonid Abundance
 
 ```{r}
 #Load packages
@@ -128,6 +128,10 @@ salmonid_trawl <- salmonid_trawl %>%
 
 
 ```
+
+Monitoring juvenile fish abundances and tracking outmigration is crucial for understanding the distribution and overall health of salmon populations. This data provides insight into juvenile salmon abundance and the response to specific environmental variables. Programs like the Delta Juvenile Fish Monitoring Program are vital to allow researchers to gain insight into California's Pacific salmon populations, their movement, and evaluate effective conservation strategies.
+
+Below, we focus specifically on the DJFMP trawl surveys, selecting this single sampling method to maintain consistency without sampling techniques. Analysis of additional survey methods are described in Section 2.
 
 ```{r}
 #| fig-cap: "Juvenile salmon abundance over time"
@@ -272,7 +276,7 @@ ggsave("./figures/fig2.png", plot = fig2, width = 8, height = 6, dpi = 300)
 
 When factoring catch per unit effort based on the number of trawls per sampling site, we see an ever sharper decline in abundance over time (Fig. 2). Relative abundance of steelhead has remained significantly smaller than Chinook salmon, however, comparatively, Chinook have been trending sharply downward over time despite the amount of trawling effort. Yet, for all salmonid species, we see fewer fish detected over per unit sampling effort over time.
 
-#### Flow Rate Trends and Effects
+#### 1.2 Flow Rate Trends and Effects
 
 ```{r}
 #Load in flow data
@@ -435,7 +439,7 @@ summary(m.flow)
 
 Flow appears to influence salmonid abundance, with juvenile salmon showing higher counts within a certain range of flows (Fig. 5). This is well-known within salmonid ecology, that flows directly influence juvenile salmon health and abundance. To better understand this relationship, we fit a generalized additive model (GAM) to account for non linearity within the relationship, using a negative binomial distribution to account for overdispertion within the data. The smooth term (indicated by edf) for log(flow) was highly significant which indicates a strong non-linear relationship between flow and abundance, but this model only explained 2.93% of the variability within our data. This points towards focus on other factors leading to the variability within abundance we see within our data.
 
-#### Temperature Trends and Effects
+#### 1.3 Water Temperature Trends and Effects
 
 ```{r}
 #| fig-cap: "Mean water temperature by year"
@@ -594,7 +598,7 @@ peak_DOY <- decade_water_temp %>%
 
 
 #plot 
-ggplot(decade_water_temp, aes(x = DOY, y = mean_temp, color = factor(decade))) +
+fig10 <- ggplot(decade_water_temp, aes(x = DOY, y = mean_temp, color = factor(decade))) +
   geom_line(size = 0.7) +
    geom_vline(data = peak_DOY, aes(xintercept = peak_DOY, color = factor(decade)),
              linetype = "dashed") +
@@ -617,27 +621,34 @@ ggplot(decade_water_temp, aes(x = DOY, y = mean_temp, color = factor(decade))) +
     ),
     name = "Decade"
   ) +
-  theme_minimal()
+  theme_bw()
 
+fig10
+
+#savefigure 
+ggsave("./figures/fig10.png", plot = fig10, width = 8, height = 6, dpi = 300)
 ```
 
 ```{r}
 #see if there are sig diff between decades
 anova_decadaltemps1 <- aov(mean_temp ~ decade, data = decade_water_temp)
+
+saveRDS(anova_decadaltemps1, file = "./outputs/anova_decadaltemps1.rds")
+
 summary(anova_decadaltemps1)
 ```
 
 We have seen significant differences in average water temperatures in the Delta across decades. The day of the year with the highest water temperatures has been shifting later in the year over time. Understanding some of these more long term trends is important when considering water management and policy actions, recognizing that previously enacted policies may need to be reevaluated.
 
-#### Phenological Shifts
+### Section 2 - Phenological Shifts 
 
 The timing of juvenile Chinook outmigration differs among run types, but is also affected by environmental variables, particularly flow and temperature. As a result, the year-to-year differences in *when* these fish pass through the Delta is likely a reflection of the conditions that they experience. We explored the beach seine data from the Delta Juvenile Fish Monitoring Program with the objective of visualizing patterns in the phenology of juvenile outmigration. We limited the data we used to samples from October through December to match the seasonality of the FMWT sampling (see above), and we used data from the sites that appeared to be sampled most consistently from 1977 through 2025. We pooled all run types together in this analysis: The data do include run type categories based on LAD (length-at-date), but these designations are notoriously inaccurate and, because of the limited months during which the data we used were collected, the salmon included in these data were almost certainly Spring- Late Fall- and Winter-Run fish with few Fall-Run Chinook among them. We tracked these counts over time by "day of water year", where day 0 was October 1 and day 365 (or 366) was September 30.
 
-##### Accumulation Curves
+#### 2.1 Accumulation Curves
 
 To compare yearly migration patterns, we calculated the cumulative totals for each year, summing the counts for juvenile Chinook across all of the beach seine sites. We standardized these counts as a cumulative percentage of the annual total, and generated accumulation curves for each year.
 
-The figure below shows the year-to-year differences in the timing and the pace at which outmigrating juvenile salmon enter the Delta. The earliest outmigrants appear in the beach seine samples around day 25 of the water year and 10% of the outmigrants have appeared by about day 100. Note that the rightmost accumulation curve is from the first year of the beach seine surveys, 1977. As an extreme outlier, the probability of some kind of sampling or data quality issue is quite high, and we have excluded these data from analyses until we learn more about the circumstances and the potential sources for error or some other explanatory factor.
+The figure below shows the year-to-year differences in the timing and the pace at which outmigrating juvenile salmon enter the Delta (Fig. 11). The earliest outmigrants appear in the beach seine samples around day 25 of the water year and 10% of the outmigrants have appeared by about day 100. Note that the rightmost accumulation curve is from the first year of the beach seine surveys, 1977. As an extreme outlier, the probability of some kind of sampling or data quality issue is quite high, and we have excluded these data from analyses until we learn more about the circumstances and the potential sources for error or some other explanatory factor.
 
 ```{r}
 #| fig-cap: "Juvenile Chinook Accumulation Curves"
@@ -757,7 +768,7 @@ daily_cum <-
 # outlier is 1977
 
 # changed the colors where the older years are lighter and newer years are darker to see the phenological shifts in timing 
-ggplot(daily_cum,
+fig11 <- ggplot(daily_cum,
        aes(x = wd,
            y = cum_percent,
            group = wy,
@@ -772,10 +783,13 @@ ggplot(daily_cum,
        color = "water year") +
   theme_bw()
 
+fig11
 
+#savefigure 
+ggsave("./figures/fig11.png", plot = fig11, width = 8, height = 6, dpi = 300)
 ```
 
-##### Thresholds
+#### 2.2 Thresholds
 
 To examine the year-to-year differences more closely, we set 10%, 50% and 90% accumulation thresholds ("day_10", "day_50", and "day_90") for the migration timing, and compared these values across years.
 
@@ -815,7 +829,7 @@ pctl_days_red <-
   filter(wy != "1977")
 
 # figure shows the day of the water year for each threshold (10, 50, 90%) for each year
-pctl_days %>% 
+fig12<- pctl_days %>% 
   ggplot(
     # color points according to threshold (10, 50, 90%)
     aes(x = wy, y = wd, color = percentile)
@@ -835,9 +849,14 @@ pctl_days %>%
        y = "Day of the Water Year",
        color = "Percentile") +
   theme_bw()
+
+fig12
+
+#savefigure 
+ggsave("./figures/fig12.png", plot = fig12, width = 8, height = 6, dpi = 300)
 ```
 
-The figure above shows that, over time (1987-2025), all three thresholds are reached earlier and earlier. To explore this relationship, we modeled the timing for each benchmark (10, 50 and 90% of each year's total outmigrants) as a function of the water year.
+We found that, over time (1987-2025), all three thresholds are reached earlier and earlier (Fig. 12). To explore this relationship, we modeled the timing for each benchmark (10, 50 and 90% of each year's total outmigrants) as a function of the water year.
 
 ```{r}
 #| include: false
@@ -853,7 +872,8 @@ m.day10.wy <-
       iter = 2000, warmup= 1000, chains= 4, cores=4,
       # setting the "seed" determines which randomnumbers will get sampled
       # so that team gets the same results when running the model
-      seed = 4)
+      seed = 4,
+      file = "outputs/m.day10.wy")
 
 # reaching the 50% benchmark
 m.day50.wy <- 
@@ -862,7 +882,8 @@ m.day50.wy <-
       family= gaussian,
       day_50 ~ 1 + wy,
       iter = 2000, warmup = 1000, chains = 4, cores = 4,
-      seed = 4)
+      seed = 4,
+      file = "outputs/m.day50.wy")
 
 # reaching the 90% benchmark
 m.day90.wy <- 
@@ -870,10 +891,9 @@ m.day90.wy <-
       family= gaussian,
       day_90 ~ 1 + wy,
       iter = 2000, warmup = 1000, chains = 4, cores =4,
-      seed = 4)
+      seed = 4,
+      file = "outputs/m.day90.wy")
 ```
-
-Model summaries:
 
 ```{r}
 summary(m.day10.wy)
@@ -881,12 +901,8 @@ summary(m.day50.wy)
 summary(m.day90.wy)
 ```
 
-To see how well these models performed and to determine the probability of a temporal effect, we plotted model performance and calculated the probabilities that the slope for each linear model differed from 0:
-
 ```{r}
-#| fig-cap: "Model Plots for Year-Effect on 10, 50 & 90% Thresholds"
-
-#FIGURE 13
+#| include: false
 
 # run the model plots for m.d_10.wy, m.d_50.wy, m.d_90.wy
 plot(m.day10.wy)
@@ -908,7 +924,9 @@ m.day90.wy %>%
   summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
 ```
 
-##### Water Year Type
+We ran three separate Bayesian
+
+#### 2.3 Water Year Type
 
 We attempted to determine if there was an effect of water year type on the timing of Chinook outmigration. Environmental conditions vary from one year to the next, and a widely used metric for categorizing water availability for a water year is the Water Year Type: Each year, the California Department of Water Resources determines a water year type, a category based on the flow, unaltered by anthropogenic action, for the Sacramento River watershed. A year may be Critical, Dry, Below Normal, Above Normal, or Wet. We tested a model that included both Water Year and Water Year *Type* as explanatory factors:
 
@@ -976,9 +994,13 @@ pctl_days_wyt %>%
   theme_bw()
 ```
 
-##### Timing Shifts
+#### 2.4 Timing Shifts
 
 The accumulation curves and the apparent temporal trends in the accumulation thresholds–the initial 10% of each year's salmon come 0.44 days earlier each year–suggest that some broad scale factor or suite of factors is affecting migratory phenology. Surprisingly, there does not seem to be an effect of water year type: Based on analysis of the timing of the 10% threshold, the measure is reach earliest in Critical and Dry years, but the third earliest timing occurs during Wet years. The distribution of these posteriors, however, all overlap considerably and it does seem reasonable to suggest that more direct effects are operating than these basin-wide patterns.
+
+### Section 3 - Modelling 
+
+add in model here for flow and
 
 ### Discussion and Suggested Action
 

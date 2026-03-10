@@ -110,6 +110,7 @@ combo_trawl <- combo_trawl %>%
     )
   )
 
+
 #Salmonid only dataset
 #Filtering for salmonids and for specific sites  
 salmonid_trawl <- combo_trawl %>% 
@@ -187,7 +188,7 @@ saveRDS(m.year, file = "./outputs/m.year.rds")
 ```
 
 ```{r}
-summary(model_nb)
+summary(m.year)
 ```
 
 ```{r}
@@ -329,6 +330,9 @@ salmonid_trawl <- salmonid_trawl %>%
 salmonid_trawl <- salmonid_trawl %>%
   mutate(SampleDate = as.Date(SampleDate, format = "%m/%d/%Y"))
 
+#Get DOY for mapping
+salmonid_trawll <- salmonid_trawl %>%
+   mutate(DOY = yday(SampleDate))
 
 #Merge with flow data
 salmonid_trawl <- salmonid_trawl %>%
@@ -1021,7 +1025,7 @@ The Bayesian linear model revelas that water year does have a small effect on th
 
 ### Section 3 - Final Synthesis Model
 
-In order to determine the largest impacts to juvenile salmon abundances, we combined the effects of temperature, flow and day of water year into a Baysian GAM framework.
+In order to determine the largest impacts of environmental and water managmenet decisions on juvenile salmon abundances, we combined the effects of temperature, flow and day of water year into a Bayesian GAM framework. This allows us to assess how seasonal outmigration timing, water temperature, and flow as well as long term variation contribute to the variability we see in salmon abundance. This can aid in better understanding the impacts of water policy decisions and understand important factors in population dynamics.
 
 ```{r}
 #| include: false

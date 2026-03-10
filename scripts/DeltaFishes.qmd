@@ -751,7 +751,7 @@ Each year, the California Department of Water Resources determines a water year 
 ## year type ----
 # first, add water year type to the percentile_days df
 wy_type <- 
-  read_excel("data/processed/cdec-water-year-type-jun-2025.xlsx") %>% 
+  read_excel(here("data", "processed", "cdec-water-year-type-jun-2025.xlsx")) %>% 
   mutate(wy = WY,
          wyt = factor(WYT),
          watershed = factor(Area),

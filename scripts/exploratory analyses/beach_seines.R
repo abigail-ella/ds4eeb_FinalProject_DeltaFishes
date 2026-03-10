@@ -1353,6 +1353,39 @@ percentile_days %>%
        x = "Water Year",
        y = "Day of the Water Year")
 
+### priors ----
+# use priors in an analysis of the year effect
+my_priors <- c(
+  # intercept: wy day when 10% have migrated for the average year
+  # day 110 is earlyish January and an SD of 40 allows for a broad range in timing
+  prior(normal(110, 40), class = "Intercept"), 
+  
+  # prior for the slope (ie change over time)
+  # center on 0 (assuming no trend) with an SD of 2 (unlikely to shift >2 days/year)
+  prior(normal(0, 2), class = "b", coef = "wy_centered"),
+  
+  # prior for Residual Error (standard deviation of the model)
+  prior(student_t(3, 0, 20), class = "sigma")
+)
+
+pctl_days_wyt <- read_rds(here("data", "processed", "pctl_days_wyt.rds"))
+
+m2.day10.wy <- 
+  brm(data = pctl_days_wyt, # use the percentile_days data
+      # use a gaussian (normal) distribution
+      family = gaussian,
+      # specify the model
+      wd ~ 1 + wy_centered,
+      prior = my_priors,
+      # specify parameters for executing the Markov chains
+      iter = 2000, warmup= 1000, chains= 4, cores=4,
+      # setting the "seed" determines which randomnumbers will get sampled
+      # so that team gets the same results when running the model
+      seed = 4)
+
+summary(m2.day10.wy)
+plot(m2.day10.wy)
+
 ## year type ----
 # first, add water year type to the percentile_days df
 wy_type <- 

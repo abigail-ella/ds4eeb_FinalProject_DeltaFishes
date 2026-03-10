@@ -1080,7 +1080,7 @@ daily_cum <-
   filter(watershed == "Sacramento Valley") %>% 
   right_join(daily_cum,
              by = "wy") %>% 
-  select(-watershed)
+  dplyr::select(-watershed)
 
 write_rds(daily_cum, "data/processed/daily_cum.rds")
 
@@ -1222,7 +1222,7 @@ my_colors <-
              option = "Hypsypops_rubicundus",
              end = 0.5)
 
-gplot(pctl_days,
+ggplot(pctl_days,
       aes(x = wy, y = wd, color = percentile)) +
   geom_point(size = 4) +
   scale_color_fish(discrete = TRUE, option = "Oncorhynchus_tshawytscha", direction = -1)
@@ -1385,6 +1385,26 @@ m2.day10.wy <-
 
 summary(m2.day10.wy)
 plot(m2.day10.wy)
+
+# what's the probability that the slope for day_10 is <0?
+
+m2.day10.wy %>%
+  spread_draws(b_wy_centered) %>%
+  summarise(p_slope_lessthan_zero = sum(b_wy_centered < 0) / n())
+
+# visualize this...
+library(tidybayes)
+library(ggplot2)
+
+m2.day10.wy %>%
+  gather_draws(b_wy_centered) %>% # create .value and .variable columns
+  ggplot(aes(x = .value, y = .variable)) +
+  stat_halfeye(fill = "skyblue", alpha = 0.8) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Posterior Distribution of Year Effect",
+       x = "Change in Days per Year",
+       y = NULL)
+
 
 ## year type ----
 # first, add water year type to the percentile_days df

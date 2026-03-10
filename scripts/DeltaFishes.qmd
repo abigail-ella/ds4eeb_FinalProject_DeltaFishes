@@ -924,11 +924,19 @@ m.day90.wy %>%
   summarise(p_slope_lessthan_zero = sum(b_wy < 0) / n())
 ```
 
-We ran three separate Bayesian
+We ran three separate Bayesian linear models to look at how the timing of juvenile salmon outmigration, represented here as the days at which 10%, 50% and 90% of total yearly abundance had accumulated, varied over time. Each model used a Gaussian distribution with year as the predictor. Our 10% and 50% models credible intervals provide strong evidence that the slopes are different from zero, however, the upper limit of the 90% model is at 0 exactly which gives less certainty to this slope's difference from zero and an overall weaker trend.
+
+-   For our 10% accumulation model, there was an estimated slope of -0.75 days per year
+
+-   For our 50% accumulation model, there was an estimated slope of -0.68 days per year
+
+-   For our 90% accumulation model, there was an estimated slope -0.37 days per year
+
+This reveals a shift to an earlier outmigration time for juvenile Chinook salmon. This is important to consider when handling water management decisions as we must continue to understand the window in which management decisions will be effective.
 
 #### 2.3 Water Year Type
 
-We attempted to determine if there was an effect of water year type on the timing of Chinook outmigration. Environmental conditions vary from one year to the next, and a widely used metric for categorizing water availability for a water year is the Water Year Type: Each year, the California Department of Water Resources determines a water year type, a category based on the flow, unaltered by anthropogenic action, for the Sacramento River watershed. A year may be Critical, Dry, Below Normal, Above Normal, or Wet. We tested a model that included both Water Year and Water Year *Type* as explanatory factors:
+We also attempted to determine if there was an effect of water year type on the timing of Chinook outmigration. Environmental conditions vary from one year to the next, and a widely used metric for categorizing water availability for a water year is the Water Year Type: Each year, the California Department of Water Resources determines a water year type, a category based on the flow, unaltered by anthropogenic action, for the Sacramento River watershed. A year may be Critical, Dry, Below Normal, Above Normal, or Wet. We tested a model that included both Water Year and Water Year *Type* as explanatory factors.
 
 ```{r}
 #| include: false
@@ -962,12 +970,15 @@ m2.day10.wy.wyt <-
       wd ~ 0 + wy_centered + wyt, 
       iter = 10000, warmup = 1000, chains = 4, cores = 4, seed = 42,
       # save fitted model (this one w the wy centered)
-      file = here("data", "processed", "m2.day10.wy.wyt")
+      file = "outputs/m2.day10.wy.wyt"
       )
 
 ```
 
-Model summary and performance:
+```{r}
+#| include: false
+plot(m2.day10.wy.wyt)
+```
 
 ```{r}
 summary(m2.day10.wy.wyt) 
@@ -975,8 +986,6 @@ summary(m2.day10.wy.wyt)
 # and don't follow an ordered process and besides they all overlap considerably; the 
 # dry year types (C & D) are the earliest, but wet is the next soonest! I still wonder
 # if there is an interaction effect...
-
-plot(m2.day10.wy.wyt)
 ```
 
 ```{r}
@@ -984,27 +993,129 @@ plot(m2.day10.wy.wyt)
 
 #FIGURE 14
 
-pctl_days_wyt %>% 
+fig14 <- pctl_days_wyt %>% 
   filter(percentile == "day_10") %>% 
-  ggplot(aes(x = wyt, y = wd, group = wyt)) +
+  mutate(wyt = factor(wyt, 
+                      levels = c("W", "AN", "BN", "D", "C"),
+                      labels = c("Wet", "Above Normal", "Below Normal", "Dry", "Critical"))) %>%
+  filter(!is.na(wyt)) %>% 
+  ggplot(aes(x = wyt, y = wd, group = wyt, fill = wyt)) +
   geom_boxplot() +
+  scale_fill_manual(values = c("Wet"= "#021893", 
+                               "Above Normal"= "#3537ae", 
+                               "Below Normal" = "#740699", 
+                               "Dry" = "#b70b0b", 
+                               "Critical" = "#990623"), 
+                    name = "Water Year Type") + 
   labs(title = "Timing of 10% Annual Accumulation Threshold",
        x = "Water Year Type",
        y = "Day of the Water Year") +
   theme_bw()
+
+fig14
+
+
 ```
 
-#### 2.4 Timing Shifts
+The Bayesian linear model revelas that water year does have a small effect on the timing of outmigration. The accumulation curves and the apparent temporal trends in the accumulation thresholds–the initial 10% of each year's salmon come 0.44 days earlier each year–suggest that some broad scale factor or suite of factors is affecting migratory phenology. Surprisingly, there does not seem to be an effect of water year type: Based on analysis of the timing of the 10% threshold, the measure is reach earliest in Critical and Dry years, but the third earliest timing occurs during Wet years. The distribution of these posteriors, however, all overlap considerably and it does seem reasonable to suggest that more direct effects are operating than these basin-wide patterns.
 
-The accumulation curves and the apparent temporal trends in the accumulation thresholds–the initial 10% of each year's salmon come 0.44 days earlier each year–suggest that some broad scale factor or suite of factors is affecting migratory phenology. Surprisingly, there does not seem to be an effect of water year type: Based on analysis of the timing of the 10% threshold, the measure is reach earliest in Critical and Dry years, but the third earliest timing occurs during Wet years. The distribution of these posteriors, however, all overlap considerably and it does seem reasonable to suggest that more direct effects are operating than these basin-wide patterns.
+### Section 3 - Final Synthesis Model
 
-### Section 3 - Modelling 
+In order to determine the largest impacts to juvenile salmon abundances, we combined the effects of temperature, flow and day of water year into a Baysian GAM framework.
 
-add in model here for flow and
+```{r}
+#| include: false
+#Calculate daily abundance by site, not by species 
+daily_abundance <- salmonid_trawl %>%
+  group_by(StationCode, SampleDate) %>%
+  summarise(
+    salmon_abundance = sum(Count, na.rm = TRUE),
+    water_temp = mean(WaterTemp, na.rm = TRUE),
+    flow = first(OUT),
+    DOY = first (DOY),
+    season = first(season),
+    year = first(year),
+    .groups = "drop"
+  )
+
+daily_abundance <- daily_abundance %>%
+  mutate(
+    flow_std = scale(flow),
+    temp_std = scale(water_temp)
+  )
+
+daily_abundance$log_flow <- log1p(daily_abundance$flow) #log1p to handle zeros? 
+
+#To look at deafailt priors
+prior.list1 <- default_prior(salmon_abundance ~ s(log_flow) + s(water_temp) + s(DOY) + (1| StationCode), data = daily_abundance, family = negbinomial())
+
+
+# start timer gauge how long it takes to run a GAM
+ptm <- proc.time()
+
+#Model to look at effects of temp and flow on salmon abundance factoring in difference in station
+m.flow.v.temp <- brm(bf(
+  salmon_abundance ~ 
+    s(log_flow, k = 5) + #the k parameters are to account for how much smoothing happens basically
+    s(water_temp, k = 5) +
+    s(DOY, k = 5) +
+    (1|StationCode)),
+  data = daily_abundance,
+  family = negbinomial(),
+  cores = 4, 
+  chains = 4,
+  iter = 1000,
+  control = list(adapt_delta = 0.9),
+  file = "outputs/m.flow.v.temp"
+)
+
+# Stop the clock
+proc.time() - ptm
+
+#Look at priors for second model
+prior.list2 <- get_prior(salmon_abundance ~ s(log_flow) + s(water_temp) + s(DOY) + (1| StationCode) + (1| year), data = daily_abundance, family = negbinomial())
+
+# start timer gauge how long it takes to run a GAM
+ptm2 <- proc.time()
+
+#Model to look at effects of temp and flow on salmon abundance factoring in difference in station and year varibailty 
+m.flow.v.temp_year <- brm(bf(
+  salmon_abundance ~ 
+    s(log_flow, k = 5) +
+    s(water_temp, k = 5) +
+    s(DOY, k = 5) +
+    (1|StationCode) + (1|year)),
+  data = daily_abundance,
+  family = negbinomial(),
+  cores = 4, 
+  chains = 4,
+  iter = 1000,
+  control = list(adapt_delta = 0.9),
+  file = "outputs/m.flow.v.temp_year"
+)
+
+# Stop the clock
+proc.time() - ptm2
+```
+
+```{r}
+#| include: false
+#Analyzing Model
+plot(m.flow.v.temp)
+plot(m.flow.v.temp_year)
+```
+
+```{r}
+summary(m.flow.v.temp)
+summary(m.flow.v.temp_year)
+```
+
+```{r}
+loo(m.flow.v.temp)
+loo(m.flow.v.temp_year)
+```
 
 ### Discussion and Suggested Action
-
-How can these results be used in management decisions and policy changes...
 
 A major limitation to our study is the fact that sizable (millions) but unknown numbers of hatchery fry are released into the system every year. Furthermore, the timing and the location of these releases have largely gone unrecorded; there is no way to know when or where these fish were released and even attempt to avoid or reduced the chances that they were included in these data. California's Central Valley Constant Fractional Marking program, whereby roughly 25% of these hatchery fish were adipose-clipped and tagged with coded wire tags, was begun in 2007, but the numbers are inconsistent and unreported.
 

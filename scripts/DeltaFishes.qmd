@@ -9,7 +9,6 @@ execute:
   warning: false
   message: false
   results: "hide"
-  dir: project
   fig-align: center
   fig-width: 8 
   fig-height: 6
@@ -154,6 +153,7 @@ fig1 <- ggplot(
 
 fig1
 
+#savefigure 
 ggsave("./figures/fig1.png", plot = fig1, width = 8, height = 6, dpi = 300)
 
 ```
@@ -250,7 +250,7 @@ trawl_indices <-
                values_to = "index")
 
 # plot ----
-ggplot(trawl_indices,
+fig2<- ggplot(trawl_indices,
        aes(x = year, y = index, color = species)) +
   geom_point() +
   geom_line() +
@@ -263,6 +263,10 @@ ggplot(trawl_indices,
   )) +
   theme_minimal()
 
+fig2
+
+#savefigure 
+ggsave("./figures/fig2.png", plot = fig2, width = 8, height = 6, dpi = 300)
 
 ```
 
@@ -345,7 +349,7 @@ annual_flow <- allflow %>%
   )
 
 #Make annual flow figure
-ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
+fig3 <-ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
   geom_col(alpha = 0.8) +
   scale_fill_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
   scale_x_continuous(
@@ -359,13 +363,18 @@ ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
   ) +
   theme_bw()
 
+fig3
+
+#savefigure 
+ggsave("./figures/fig3.png", plot = fig3, width = 8, height = 6, dpi = 300)
+
 ```
 
 ```{r}
 #| fig-cap: "Linear trend of annual flow"
 
 #FIGURE 4
-ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
+fig4 <- ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
   geom_line(alpha = 0.3) +           
   geom_smooth(method = "lm") + 
   labs(
@@ -373,6 +382,11 @@ ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
     y = "Mean Annual Flow (cfs)"
   ) +
   theme_bw()
+
+fig4
+
+#savefigure 
+ggsave("./figures/fig4.png", plot = fig4, width = 8, height = 6, dpi = 300)
 ```
 
 Over the past several decades, we've seen increasingly drier conditions and a reduction in overall water availability. These conditions have severe consequences for juvenile salmonids who rely on freshwater flows through the Delta. This long-term monitoring has suggested that average flows through the Delta have trended downward over time (Fig. 4). We also have see drier conditions in the Sacramento River System as a whole, with an increase in "Dry" and "Critical" years since 2000 (Fig. 3).
@@ -386,7 +400,7 @@ However, even in years classified as "Above Normal", the amount of water flowing
 salmonid_trawl$log_flow <- log1p(salmonid_trawl$OUT) #log1p to handle zeros
 
 #FIGURE 5
-ggplot(salmonid_trawl, aes(x = log_flow, y = Count, color = Y)) +
+fig5 <- ggplot(salmonid_trawl, aes(x = log_flow, y = Count, color = Y)) +
   geom_point()  +
   scale_color_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
   labs(
@@ -394,6 +408,11 @@ ggplot(salmonid_trawl, aes(x = log_flow, y = Count, color = Y)) +
     y = "Daily Abundance Count"
   ) +
   theme_bw()
+
+fig5
+
+#savefigure 
+ggsave("./figures/fig5.png", plot = fig5, width = 8, height = 6, dpi = 300)
 
 ```
 
@@ -407,7 +426,7 @@ m.flow <- gam(Count ~ s(log_flow),
               data = salmonid_trawl,
               family = nb())
 
-saveRDS(m.flow, file = "outputs/m.flow")
+saveRDS(m.flow, file = "./outputs/m.flow.rds")
 ```
 
 ```{r}
@@ -430,7 +449,7 @@ annual_water_temp <- combo_trawl %>%
   )
 
 #Figure 6
-ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
+fig6 <- ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
   geom_line(color = "firebrick", size = 1) +
   geom_smooth(method = "lm", se = TRUE, color = "black") +
   geom_point(color = "firebrick") +
@@ -439,6 +458,12 @@ ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
     y = "Mean Water Temperature"
   ) +
   theme_bw()
+
+fig6
+
+#savefigure 
+ggsave("./figures/fig6.png", plot = fig6, width = 8, height = 6, dpi = 300)
+
 ```
 
 Temperature is an incredibly important environmental factor that influences salmon survival, distribution, and health. Studies have shown that juveniles thrive within a very narrow temperature range as this is a very critical and metabolically demanding life stage. Variability in temperature can severely impact growth and stress.
@@ -449,7 +474,7 @@ From these long-term water temperature records, there seems to be a downward tre
 #| fig-cap: "Mean water temperature by year, 1995-2025"
 
 #FIGURE 7
-annual_water_temp %>% 
+fig7 <- annual_water_temp %>% 
   filter(year > 1995) %>% 
   ggplot(aes(x = year, y = mean_temp)) +
   geom_line(color = "firebrick", size = 1) +
@@ -460,6 +485,11 @@ annual_water_temp %>%
     y = "Mean Water Temperature"
   ) +
   theme_bw()
+
+fig7
+
+#savefigure 
+ggsave("./figures/fig7.png", plot = fig7, width = 8, height = 6, dpi = 300)
 ```
 
 After these policy changes, we have seen a steady increase in water temperatures in the Delta, with temperatures reaching over 19C in some years. This warming is significantly important for juvenile salmonid rearing in this habitat who need cooler waters to survive and grow.
@@ -468,13 +498,18 @@ After these policy changes, we have seen a steady increase in water temperatures
 #| fig-cap: "Delta mean monthly water temperature"
 
 #Figure 8
-ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
+fig8 <- ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
   geom_boxplot(fill = "skyblue", alpha = 0.7) +
   labs(
     x = "Month",
     y = "Water Temperature"
   ) +
   theme_bw()
+
+fig8
+
+#savefigure 
+ggsave("./figures/fig8.png", plot = fig8, width = 8, height = 6, dpi = 300)
 ```
 
 The Delta exhibits strong seasonal variability in water temperature, driven by changes in air temperature, inflows, and hydrologic conditions throughout the year (Fig. 8). During winter and early spring, temperatures tend to remain relatively cool as snowmelt and increased river flows enter the system. However, as summer progresses and flows decrease, water temperatures rise substantially across the Delta. This is incredibly important when considering juvenile fish migration timing and water policy changes that may aid in both juvenile outmigration survival, adult spawning, and egg incubation.
@@ -483,7 +518,7 @@ The Delta exhibits strong seasonal variability in water temperature, driven by c
 #| fig-cap: "Water temperature (C) effects on juvenile salmon abundance"
 
 #Figure 9
-ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
+fig9 <- ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
   geom_point(alpha = 0.8) + 
   scale_color_manual(values = c("W"= "#021893", "AN"= "#3537ae", "BN" = "#740699" , "D" = "#b70b0b", "C" = "#990623" ), labels = c ("W" = "Wet", "AN" = "Above Normal", "BN" = "Below Normal", "D"= "Dry", "C"= "Critcal"), name = "Water Year Type") + 
   labs(
@@ -491,6 +526,11 @@ ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
     y = "Daily Abundance Count"
   ) +
   theme_bw()
+
+fig9
+
+#savefigure 
+ggsave("./figures/fig9.png", plot = fig9, width = 8, height = 6, dpi = 300)
 ```
 
 Juvenile salmon abundance in the Delta appears to peak within an intermediate temperature range with some of the highest abundances recorded around 15C. This suggests that there is not only an optimal temperature in these moderate thermal conditions, but that there is also a temperature threshold juveniles can survive within. Temperatures on the lower end may reduce growth and metabolic rates, while the higher end may induce thermal stressors.
@@ -504,7 +544,7 @@ m.temp <- gam(Count ~ s(WaterTemp),
               data = salmonid_trawl,
               family = nb())
 
-saveRDS(m.temp, file = "outputs/m.temp")
+saveRDS(m.temp, file = "./outputs/m.temp.rds")
 ```
 
 ```{r}

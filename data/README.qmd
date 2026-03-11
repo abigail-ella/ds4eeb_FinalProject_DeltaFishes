@@ -8,7 +8,7 @@ output-file: README.md
 
 ## Folder Summary
 
-#### Table of Contents
+### Table of Contents
 
 `/data/`
 
@@ -30,9 +30,15 @@ output-file: README.md
 
 `|------/sample_sites.csv  #CSV file converted from DJFMP EDI R script with sample site locations`
 
-`|------/seine_76_325.csv  #CSV file converted from DJFMP EDI R script with sample site locations`
+`|------/seine_76_325.csv  #CSV file converted from DJFMP EDI R script with beach seine data`
 
-#### Data Sources
+`|------/taxonomy.csv  #CSV file converted from DJFMP EDI R script with taxonomy`
+
+`|------/trawl_76_01.csv  #CSV file converted from DJFMP EDI R script with trawl data 1976-2001`
+
+`|------/trawl_02_25.csv  #CSV file converted from DJFMP EDI R script with trawl data 2002-2025`
+
+### Data Sources
 
 All data used in this project is from the Delta Juvenile Fish Monitoring Program (DJFMP) Environmental Data, accessed via the Environmental Data Initiative (EDI - <https://portal.edirepository.org/nis/mapbrowse?scope=edi&identifier=244>). Sampling locations are spread throughout the Sacramento–San Joaquin River Delta and span decades as monitoring has occurred from 1976 to present day. This program has monitored abundance and distribution of fish species utilizing both trawls and beach seines. Monitoring also include environmental data at all sites.
 

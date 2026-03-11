@@ -1,7 +1,7 @@
-#working with Peter tidy data
-install.packages("ggpubr")
+# working with Peter tidy data
+# install.packages("ggpubr")
 # install.packages("janitor")
-install.packages("car")
+# install.packages("car")
 # load libraries -----
 library(tidyverse)
 library(janitor)
@@ -17,7 +17,7 @@ library(ggeffects)
 ### give him a dag
 ## identify which beach sein sites that have been used the most consistently 
 
-# load and tidy data -----
+# load the tidy data
 dt1 <- readRDS("C:/Delta raw data/dt1.rds")
 dt2 <- readRDS("C:/Delta raw data/dt2.rds")
 dt3 <- readRDS("C:/Delta raw data/dt3.rds")

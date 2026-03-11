@@ -10,8 +10,8 @@ execute:
   message: false
   results: "hide"
   fig-align: center
-  fig-width: 8 
-  fig-height: 6
+  fig-width: 7 
+  fig-asp: 0.6
 ---
 
 ## State of Juvenile Salmon in the Delta Report
@@ -190,7 +190,7 @@ annual_data <- salmonid_trawl %>%
 m.year <- glm.nb(annual_abundance ~ year,
                    data = annual_data)
 
-saveRDS(m.year, file = "./outputs/m.year.rds")
+saveRDS(m.year, file = here("outputs", "m.year.rds"))
 ```
 
 ```{r}
@@ -341,7 +341,7 @@ salmonid_trawl <- salmonid_trawl %>%
   mutate(SampleDate = as.Date(SampleDate, format = "%m/%d/%Y"))
 
 #Get DOY for mapping
-salmonid_trawll <- salmonid_trawl %>%
+salmonid_trawl <- salmonid_trawl %>%
    mutate(DOY = yday(SampleDate))
 
 #Merge with flow data
@@ -452,7 +452,7 @@ m.flow <- gam(Count ~ s(log_flow),
               data = salmonid_trawl,
               family = nb())
 
-saveRDS(m.flow, file = "./outputs/m.flow.rds")
+saveRDS(m.flow, file = here("outputs", "m.flow.rds"))
 ```
 
 ```{r}
@@ -586,7 +586,7 @@ m.temp <- gam(Count ~ s(WaterTemp),
               data = salmonid_trawl,
               family = nb())
 
-saveRDS(m.temp, file = "./outputs/m.temp.rds")
+saveRDS(m.temp, file = here("outputs", "m.temp.rds"))
 ```
 
 ```{r}
@@ -675,7 +675,7 @@ ggsave("./figures/fig10.png", plot = fig10, width = 8, height = 6, dpi = 300)
 #see if there are sig diff between decades
 anova_decadaltemps1 <- aov(mean_temp ~ decade, data = decade_water_temp)
 
-saveRDS(anova_decadaltemps1, file = "./outputs/anova_decadaltemps1.rds")
+saveRDS(anova_decadaltemps1, file = here("outputs", "anova_decadaltemps1.rds"))
 
 summary(anova_decadaltemps1)
 ```
@@ -923,7 +923,7 @@ m.day10.wy <-
       # setting the "seed" determines which randomnumbers will get sampled
       # so that team gets the same results when running the model
       seed = 4,
-      file = "outputs/m.day10.wy")
+      file = here("outputs", "m.day10.wy"))
 
 # reaching the 50% benchmark
 m.day50.wy <- 
@@ -933,7 +933,7 @@ m.day50.wy <-
       day_50 ~ 1 + wy,
       iter = 2000, warmup = 1000, chains = 4, cores = 4,
       seed = 4,
-      file = "outputs/m.day50.wy")
+      file = here("outputs", "m.day50.wy"))
 
 # reaching the 90% benchmark
 m.day90.wy <- 
@@ -942,7 +942,7 @@ m.day90.wy <-
       day_90 ~ 1 + wy,
       iter = 2000, warmup = 1000, chains = 4, cores =4,
       seed = 4,
-      file = "outputs/m.day90.wy")
+      file = here("outputs", "m.day90.wy"))
 ```
 
 ```{r}
@@ -1020,7 +1020,7 @@ m2.day10.wy.wyt <-
       wd ~ 0 + wy_centered + wyt, 
       iter = 10000, warmup = 1000, chains = 4, cores = 4, seed = 42,
       # save fitted model (this one w the wy centered)
-      file = "outputs/m2.day10.wy.wyt"
+      file = here("outputs", "m2.day10.wy.wyt")
       )
 
 ```
@@ -1087,7 +1087,7 @@ daily_abundance <- salmonid_trawl %>%
     salmon_abundance = sum(Count, na.rm = TRUE),
     water_temp = mean(WaterTemp, na.rm = TRUE),
     flow = first(OUT),
-    DOY = first (DOY),
+    DOY = first(DOY),
     season = first(season),
     year = first(year),
     .groups = "drop"
@@ -1121,7 +1121,7 @@ m.flow.v.temp <- brm(bf(
   chains = 4,
   iter = 1000,
   control = list(adapt_delta = 0.9),
-  file = "outputs/m.flow.v.temp"
+  file = here("outputs", "m.flow.v.temp")
 )
 
 # Stop the clock
@@ -1146,7 +1146,7 @@ m.flow.v.temp_year <- brm(bf(
   chains = 4,
   iter = 1000,
   control = list(adapt_delta = 0.9),
-  file = "outputs/m.flow.v.temp_year"
+  file = here("outputs", "m.flow.v.temp_year")
 )
 
 # Stop the clock

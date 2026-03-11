@@ -158,15 +158,9 @@ fig1 <- ggplot(
 
 fig1
 
-
-
-```
-
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig1.png", plot = fig1, width = 8, height = 6, dpi = 300)
+
 ```
 
 ```{r}
@@ -276,13 +270,9 @@ fig2<- ggplot(trawl_indices,
 
 fig2
 
-```
-
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig2.png", plot = fig2, width = 8, height = 6, dpi = 300)
+
 ```
 
 When factoring catch per unit effort based on the number of trawls per sampling site, we see an ever sharper decline in abundance over time (Fig. 2). Relative abundance of steelhead has remained significantly smaller than Chinook salmon, however, comparatively, Chinook have been trending sharply downward over time despite the amount of trawling effort. Yet, for all salmonid species, we see fewer fish detected over per unit sampling effort over time.
@@ -382,6 +372,10 @@ fig3 <-ggplot(annual_flow, aes(x = Year, y = mean_OUT, fill = Y)) +
   theme_bw()
 
 fig3
+
+#savefigure 
+ggsave("./figures/fig3.png", plot = fig3, width = 8, height = 6, dpi = 300)
+
 ```
 
 ```{r}
@@ -398,14 +392,6 @@ fig4 <- ggplot(annual_flow, aes(x = Year, y = mean_OUT)) +
   theme_bw()
 
 fig4
-```
-
-```{r}
-#| eval: false
-#| include: false
-#savefigure 
-#savefigure 
-ggsave("./figures/fig3.png", plot = fig3, width = 8, height = 6, dpi = 300)
 
 #savefigure 
 ggsave("./figures/fig4.png", plot = fig4, width = 8, height = 6, dpi = 300)
@@ -433,13 +419,9 @@ fig5 <- ggplot(salmonid_trawl, aes(x = log_flow, y = Count, color = Y)) +
 
 fig5
 
-```
-
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig5.png", plot = fig5, width = 8, height = 6, dpi = 300)
+
 ```
 
 ```{r}
@@ -487,13 +469,9 @@ fig6 <- ggplot(annual_water_temp, aes(x = year, y = mean_temp)) +
 
 fig6
 
-```
-
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig6.png", plot = fig6, width = 8, height = 6, dpi = 300)
+
 ```
 
 Temperature is an incredibly important environmental factor that influences salmon survival, distribution, and health. Studies have shown that juveniles thrive within a very narrow temperature range as this is a very critical and metabolically demanding life stage. Variability in temperature can severely impact growth and stress.
@@ -517,11 +495,7 @@ fig7 <- annual_water_temp %>%
   theme_bw()
 
 fig7
-```
 
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig7.png", plot = fig7, width = 8, height = 6, dpi = 300)
 ```
@@ -541,11 +515,7 @@ fig8 <- ggplot(salmonid_trawl, aes(x = month, y = WaterTemp)) +
   theme_bw()
 
 fig8
-```
 
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig8.png", plot = fig8, width = 8, height = 6, dpi = 300)
 ```
@@ -566,11 +536,7 @@ fig9 <- ggplot(salmonid_trawl, aes(x = WaterTemp, y = Count, color = Y)) +
   theme_bw()
 
 fig9
-```
 
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig9.png", plot = fig9, width = 8, height = 6, dpi = 300)
 ```
@@ -662,11 +628,7 @@ fig10 <- ggplot(decade_water_temp, aes(x = DOY, y = mean_temp, color = factor(de
   theme_bw()
 
 fig10
-```
 
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig10.png", plot = fig10, width = 8, height = 6, dpi = 300)
 ```
@@ -826,11 +788,7 @@ fig11 <- ggplot(daily_cum,
   theme_bw()
 
 fig11
-```
 
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig11.png", plot = fig11, width = 8, height = 6, dpi = 300)
 ```
@@ -897,11 +855,7 @@ fig12<- pctl_days %>%
   theme_bw()
 
 fig12
-```
 
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig12.png", plot = fig12, width = 8, height = 6, dpi = 300)
 ```
@@ -1063,11 +1017,7 @@ fig13 <- pctl_days_wyt %>%
   theme_bw()
 
 fig13
-```
 
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
 ggsave("./figures/fig13.png", plot = fig13, width = 8, height = 6, dpi = 300)
 ```
@@ -1187,13 +1137,9 @@ plots<- plot(ce)
 #FIGURE 14
 plots[[1]]
 
-```
-
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
-ggsave("./figures/fig14.png", plot = fig14, width = 8, height = 6, dpi = 300)
+ggsave("./figures/fig14.png", plot = plots[[1]], width = 8, height = 6, dpi = 300)
+
 ```
 
 ```{r}
@@ -1201,13 +1147,9 @@ ggsave("./figures/fig14.png", plot = fig14, width = 8, height = 6, dpi = 300)
 
 #FIGURE 15
 plots[[2]]
-```
 
-```{r}
-#| eval: false
-#| include: false
 #savefigure 
-ggsave("./figures/fig15.png", plot = fig15, width = 8, height = 6, dpi = 300)
+ggsave("./figures/fig15.png", plot = plots[[2]], width = 8, height = 6, dpi = 300)
 ```
 
 We fit two Bayesian generalized additive models with a negative binomial distribution, where both included smoothing for log(flow), water temperature, and day of the year (DOY) along with a random effect for sampling location. The second model added in a random effect for year to account for interannual variability.
@@ -1225,3 +1167,4 @@ From the results of this report, we suggest management actions should explicitly
 Given these results, we suggest that water management strategies should incorporate both magnitude and timing of environmental conditions that will support outmigration. Managing flow and cold-water releases from upstream dams and reservoirs during peak outmigration periods may aid in improving survival rates of salmon moving through the Delta system. Yet, because outmigration has shifted earlier in the water year, management actions that are based on historical outmigration timing maay no longer align with the current peak timing of migration. These new baselines should be considered and incorporated into management actions as we move into a future effected by altered climates.
 
 We recommend that water policies should adopt a framework that integrates this updated information and aligns flow and cold water releases with current timing of peak juvenile outmigration. We believe this will provide the greatest benefit to juvenile salmon in this area and protect salmon from impacts of warming temperatures and decreased flow rates.
+

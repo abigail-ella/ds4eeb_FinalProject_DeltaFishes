@@ -30,7 +30,7 @@ This assessment aims to evaluate the current state of juvenile salmonid abundanc
 
 To conduct our analyses, we utilize long-term monitoring data from the Delta Juvenile Fish Monitoring Program (DJFMP). This dataset provides multi-decadal information on juvenile salmonid abundance, allowing for evaluation of temporal trends and potential relationships with flow, temperature, and other ecological parameters. Through this, the study seeks to better understand how water management strategies may influence salmonid population dynamics within the Delta and propose how water resource managers may better work in the Delta.
 
-### Section 1  - Environmental Effects on Abundance 
+### Section 1 - Environmental Effects on Abundance
 
 #### 1.1 Salmonid Abundance
 
@@ -644,7 +644,7 @@ summary(anova_decadaltemps1)
 
 We have seen significant differences in average water temperatures in the Delta across decades. The day of the year with the highest water temperatures has been shifting later in the year over time. Understanding some of these more long term trends is important when considering water management and policy actions, recognizing that previously enacted policies may need to be reevaluated.
 
-### Section 2 - Phenological Shifts 
+### Section 2 - Phenological Shifts
 
 The timing of juvenile Chinook outmigration differs among run types, but is also affected by environmental variables, particularly flow and temperature. As a result, the year-to-year differences in *when* these fish pass through the Delta is likely a reflection of the conditions that they experience. We explored the beach seine data from the Delta Juvenile Fish Monitoring Program with the objective of visualizing patterns in the phenology of juvenile outmigration. We limited the data we used to samples from October through December to match the seasonality of the FMWT sampling (see above), and we used data from the sites that appeared to be sampled most consistently from 1977 through 2025. We pooled all run types together in this analysis: The data do include run type categories based on LAD (length-at-date), but these designations are notoriously inaccurate and, because of the limited months during which the data we used were collected, the salmon included in these data were almost certainly Spring- Late Fall- and Winter-Run fish with few Fall-Run Chinook among them. We tracked these counts over time by "day of water year", where day 0 was October 1 and day 365 (or 366) was September 30.
 
@@ -995,9 +995,9 @@ summary(m2.day10.wy.wyt)
 ```{r}
 #| fig-cap: "Does Water Year Type Affect Outmigration Timing?"
 
-#FIGURE 14
+#FIGURE 13
 
-fig14 <- pctl_days_wyt %>% 
+fig13 <- pctl_days_wyt %>% 
   filter(percentile == "day_10") %>% 
   mutate(wyt = factor(wyt, 
                       levels = c("W", "AN", "BN", "D", "C"),
@@ -1016,9 +1016,10 @@ fig14 <- pctl_days_wyt %>%
        y = "Day of the Water Year") +
   theme_bw()
 
-fig14
+fig13
 
-
+#savefigure 
+ggsave("./figures/fig13.png", plot = fig13, width = 8, height = 6, dpi = 300)
 ```
 
 The Bayesian linear model revelas that water year does have a small effect on the timing of outmigration. The accumulation curves and the apparent temporal trends in the accumulation thresholds–the initial 10% of each year's salmon come 0.44 days earlier each year–suggest that some broad scale factor or suite of factors is affecting migratory phenology. Surprisingly, there does not seem to be an effect of water year type: Based on analysis of the timing of the 10% threshold, the measure is reach earliest in Critical and Dry years, but the third earliest timing occurs during Wet years. The distribution of these posteriors, however, all overlap considerably and it does seem reasonable to suggest that more direct effects are operating than these basin-wide patterns.
@@ -1118,6 +1119,42 @@ summary(m.flow.v.temp_year)
 loo(m.flow.v.temp)
 loo(m.flow.v.temp_year)
 ```
+
+```{r}
+#| include: false
+#conditional smooths plots
+ce <- conditional_effects(
+  m.flow.v.temp_year,
+  effects = c("log_flow", "water_temp")
+)
+
+plots<- plot(ce)
+```
+
+```{r}
+#| fig-cap: "Effect of flow on predicted juvenile salmon abundance"
+
+#FIGURE 14
+plots[[1]]
+
+#savefigure 
+ggsave("./figures/fig14.png", plot = plots[[1]], width = 8, height = 6, dpi = 300)
+
+```
+
+```{r}
+#| fig-cap: "Effect of water temperature on predicted juvenile salmon abundance"
+
+#FIGURE 15
+plots[[2]]
+
+#savefigure 
+ggsave("./figures/fig15.png", plot = plots[[2]], width = 8, height = 6, dpi = 300)
+```
+
+We fit two Bayesian generalized additive models with a negative binomial distribution, where both included smoothing for log(flow), water temperature, and day of the year (DOY) along with a random effect for sampling location. The second model added in a random effect for year to account for interannual variability.
+
+Within both models, we saw that seasonal timing (DOY) had the largest effect on abundance. This is supported by our previously shown outmigration patterns, revealing that salmon abundances are highly correlated with these outmigration periods. Water temperature and flow seemed to still have meaningful effects on abundances, with higher temperatures and flows associated with lower abundance. Looking at the conditional smooth plots for flow and water temperature we can understand these relationships further. These plots show hoe predicted salmon abundance changes across the range of the environmental variable measured. Theses show the ranges where flow and temperature are associated with increases in abundances. This pattern is consistent with biologically understood thresholds and the range at which juvenile salmon survive and thrive within.
 
 ### Discussion and Suggested Action
 

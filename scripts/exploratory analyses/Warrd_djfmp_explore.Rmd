@@ -974,6 +974,8 @@ And then look at effects over time.
 
 This is practicing a Generalized additive model in brms https://michael-franke.github.io/Bayesian-Regression/practice-sheets/10b-GAMs.html and https://uclpg-msc-sgds.github.io/GEOG0125/bayesian-generalised-additive-models-gams.html were helpful here 
 
+#GAM MODELS
+
 ```{r}
 #Calculate daily abundance by site, not by species 
 daily_abundance <- salmonid_trawl %>%

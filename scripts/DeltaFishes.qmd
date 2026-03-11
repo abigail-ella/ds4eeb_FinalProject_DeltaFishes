@@ -1,6 +1,6 @@
 ---
 title: "Long term water quality effects on juvenile salmon abundance in the Sacramento San-Joaquin River Delta"
-author: "Abigail Ward, Ambrosio Rivera, Walt Vance, Peter Nelson"
+author: "Ward, A., Rivera, A., Vance, W., and Nelson, P."
 format:
  pdf: default
 editor: visual

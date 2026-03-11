@@ -1,0 +1,43 @@
+---
+title: "README"
+author: "Ward, A., Rivera, A., Vance, W., and Nelson, P."
+format: gfm
+editor: visual
+output-file: README.md
+---
+
+## Folder Summary
+
+#### Table of Contents
+
+`/data/`
+
+`|--- raw/ # Raw data directly from the DJFMP EDI Repository`
+
+`|------``/edi.244.14.r  #R script downloaded directly from EDI Repository`
+
+`|--- processed/ # Data utilized throughout the workflow`
+
+`|------/cdec-water-year-type-jun-2025.xlsx  #Excel file from CDEC with water year type`
+
+`|------/dayflow-results-1970-1983.csv  #CSV file from DWR with flow rates 1970- 1983`
+
+`|------/dayflow-results-1984-1996.csv  #CSV file from DWR with flow rates 1984- 1996`
+
+`|------/dayflow-results-1997-2023.csv  #CSV file from DWR with flow rates 1997- 2023`
+
+`|------/percentile_days.csv  #CSV file calculated to get percentiles for outmigration timing`
+
+`|------/sample_sites.csv  #CSV file converted from DJFMP EDI R script with sample site locations`
+
+`|------/seine_76_325.csv  #CSV file converted from DJFMP EDI R script with sample site locations`
+
+#### Data Sources
+
+All data used in this project is from the Delta Juvenile Fish Monitoring Program (DJFMP) Environmental Data, accessed via the Environmental Data Initiative (EDI - <https://portal.edirepository.org/nis/mapbrowse?scope=edi&identifier=244>). Sampling locations are spread throughout the Sacramento–San Joaquin River Delta and span decades as monitoring has occurred from 1976 to present day. This program has monitored abundance and distribution of fish species utilizing both trawls and beach seines. Monitoring also include environmental data at all sites.
+
+Flow data was sourced from the California Department of Water Resources Dayflow data collection program (<https://data.cnra.ca.gov/dataset/dayflow>), with primary focus on flow rate in and around the Delta.
+
+Data used in this analysis was filtered to focus specifically on trawl survey data during the fall season. Here, we focus on two key water quality parameters measured within this data: temperature and salinity.
+
+Raw data were downloaded as CSV files and stored in the `data/` directory. Processed data used for analysis are generated via scripts in the `scripts/` directory.

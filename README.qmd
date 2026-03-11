@@ -1,6 +1,6 @@
 ---
 title: "README"
-author: "Ward, A."
+author: "Ward, A., Rivera, A., Vance, W., and Nelson, P."
 format: gfm
 editor: visual
 output-file: README.md
@@ -26,11 +26,9 @@ Our project is looking to understand the long term changes to important water qu
 
 The Delta Juvenile Fish Monitoring Program (DJFMP) includes several long-term fish monitoring projects within the Sacramento-San Joaquin Delta and San Francisco Bay. Initially established in 1978 to monitor juvenile fall-run Chinook Salmon (*Oncorhynchus tshawytscha*) abundance, the program now includes efforts to monitor all four Chinook run-types, as well as Steelhead (*O. mykiss*), Delta Smelt (*Hypomesus transpacificus*), Striped Bass (*Morone saxatilis*) and other resident and migratory fishes. Environmental data too are collected as a part of this effort.
 
-ADD MORE HERE about the background information of both DJFMP and how this data is influencing our motivating question. Also discuss a target audience in bold
-
 #### Target Audience
 
-The audience of this data report is California state water resource managers and policy makers. This report is aimed to help
+The audience of this data report is California state water resource managers and policy makers. This report is aimed to help inform water management strategies and policy making to be aligned with environmental data and provide an opportunity for managers to create policies that will lead to the highest success in abundance.
 
 ## Repository Summary
 
@@ -94,14 +92,6 @@ Our research questions are expected to "lead to a specific statistical analysis 
 #### Refine
 
 Early discoveries should lead to the development of some testable hypotheses and increased discussion among team members. What seems interesting? Tractable? How might different questions and components fit together? We expect that this phase should include the identification of strategies for analysis, and writing code with the expectation that others are going to run and read that code. This phase is also going to demand that we articulate our questions and hypotheses more formally, now working more closely together. Effective communication is going to be even more important.
-
-#### Produce
-
-At this point, with due dates closing in, we expect to execute our code, polishing our figures and developing slides for presenting our results to our classmates.
-
-ADD MORE HERE about what each script we have does, content available for data import and cleaning, looking at maps of environmental trends, and then fish community analysis. Also, it'd be good to flesh-out plans for using and tending our GitHub repo. We will want to keep it well organized (like Abbie created it!) so that it too is something that we can share with Malin and our classmates.
-
-ALSO: let's add a timeline in here, so we know *what* things are due and *when*!
 
 #### References
 

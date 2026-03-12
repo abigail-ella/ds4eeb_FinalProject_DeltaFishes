@@ -220,7 +220,7 @@ p_2 <- p_2 %>%
     by = "StationCode",
     relationship = "many-to-many" # added this to silence the many to many relationship between x and y
   )
-# Adding Longitude using the station code refrence
+# Adding Longitude using the station code reference
 
 p_2 <- p_2 %>%
   #join by Station code
@@ -232,7 +232,7 @@ p_2 <- p_2 %>%
 
 ################### new stuff
 ### Test some linear models, similar to those we worked in class, to see if year type can explain the year-to-year differences in migration timing (eg day of 10% accumulation).
-### That analysis, with and without 1977 (outlier), would be a great contribution to the final proj!
+
 ## Get the graph first then do the model
 
 std_colors <- c("darkblue", "green", "red")
